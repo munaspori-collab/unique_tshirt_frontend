@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Edit, Trash2, Upload, X } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, X, Image as ImageIcon, Package, DollarSign, Tag } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
-import api from '@/lib/api';
 
 interface Product {
   _id: string;
@@ -14,6 +13,12 @@ interface Product {
   price: number;
   category: 'limited' | 'seasonal';
   images: string[];
+  sizes?: string[];
+  colors?: string[];
+  description?: string;
+  fabric?: string;
+  fit?: string;
+  care?: string;
   inStock: boolean;
 }
 
@@ -57,11 +62,27 @@ export default function AdminPage() {
   const loadProducts = async () => {
     try {
       setLoadingProducts(true);
-      const response = await api.getProducts();
-      console.log('Products API response:', response);
-      // Ensure response is an array
-      const productsArray = Array.isArray(response) ? response : [];
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch products');
+      }
+      
+      const data = await response.json();
+      console.log('Products API response:', data);
+      
+      // Handle different response formats
+      let productsArray: Product[] = [];
+      if (Array.isArray(data)) {
+        productsArray = data;
+      } else if (data.products && Array.isArray(data.products)) {
+        productsArray = data.products;
+      } else if (data.data && Array.isArray(data.data)) {
+        productsArray = data.data;
+      }
+      
       setProducts(productsArray);
+      console.log('Loaded products:', productsArray.length);
     } catch (error) {
       console.error('Failed to load products:', error);
       setProducts([]);
@@ -179,25 +200,29 @@ export default function AdminPage() {
       // Reset form
       setShowForm(false);
       setEditingProduct(null);
-      setFormData({
-        name: '',
-        price: '',
-        category: 'limited',
-        description: '',
-        fabric: '',
-        fit: '',
-        care: '',
-        sizes: [],
-        colors: [],
-        inStock: true,
-      });
-      setImageFiles([]);
-      setImageUrls([]);
+      resetForm();
       loadProducts();
     } catch (error) {
       console.error('Failed to save product:', error);
       alert('Failed to save product');
     }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      price: '',
+      category: 'limited',
+      description: '',
+      fabric: '',
+      fit: '',
+      care: '',
+      sizes: [],
+      colors: [],
+      inStock: true,
+    });
+    setImageFiles([]);
+    setImageUrls([]);
   };
 
   const handleEdit = (product: Product) => {
@@ -206,12 +231,12 @@ export default function AdminPage() {
       name: product.name,
       price: product.price.toString(),
       category: product.category,
-      description: '',
-      fabric: '',
-      fit: '',
-      care: '',
-      sizes: [],
-      colors: [],
+      description: product.description || '',
+      fabric: product.fabric || '',
+      fit: product.fit || '',
+      care: product.care || '',
+      sizes: product.sizes || [],
+      colors: product.colors || [],
       inStock: product.inStock,
     });
     setImageUrls(product.images);
@@ -244,64 +269,109 @@ export default function AdminPage() {
 
   if (loading || !isAdmin) {
     return (
-      <main className="min-h-screen bg-premium-base pt-24 pb-16">
+      <main className="min-h-screen bg-gradient-to-br from-purple-50 via-premium-base to-blue-50 pt-24 pb-16">
         <div className="max-w-7xl mx-auto px-4 text-center py-20">
-          <div className="h-12 w-12 border-4 border-gray-300 border-t-premium-badge rounded-full animate-spin mx-auto" />
+          <div className="h-12 w-12 border-4 border-purple-300 border-t-purple-600 rounded-full animate-spin mx-auto" />
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-premium-base pt-24 pb-16">
+    <main className="min-h-screen bg-gradient-to-br from-purple-50 via-premium-base to-blue-50 pt-24 pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <Link
-              href="/"
-              className="inline-flex items-center text-gray-700 hover:text-gray-900 mb-4 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Home
-            </Link>
-            <h1 className="text-4xl font-serif font-bold text-gray-900">Product Management</h1>
-          </div>
-          <button
-            onClick={() => {
-              setShowForm(!showForm);
-              setEditingProduct(null);
-              setFormData({
-                name: '',
-                price: '',
-                category: 'limited',
-                description: '',
-                fabric: '',
-                fit: '',
-                care: '',
-                sizes: [],
-                colors: [],
-                inStock: true,
-              });
-              setImageFiles([]);
-              setImageUrls([]);
-            }}
-            className="flex items-center gap-2 px-6 py-3 bg-premium-badge text-white rounded-lg font-medium hover:bg-opacity-90 transition-colors"
+        {/* Header */}
+        <div className="mb-8">
+          <Link
+            href="/"
+            className="inline-flex items-center text-gray-600 hover:text-purple-600 mb-4 transition-colors group"
           >
-            <Plus className="w-5 h-5" />
-            Add Product
-          </button>
+            <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+            Back to Home
+          </Link>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl md:text-5xl font-serif font-bold text-gray-900 mb-2">
+                Admin Dashboard
+              </h1>
+              <p className="text-gray-600">Manage your products and inventory</p>
+            </div>
+            <button
+              onClick={() => {
+                setShowForm(!showForm);
+                setEditingProduct(null);
+                resetForm();
+              }}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all duration-200"
+            >
+              <Plus className="w-5 h-5" />
+              <span className="hidden sm:inline">Add Product</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Total Products</p>
+                <p className="text-3xl font-bold text-gray-900">{products.length}</p>
+              </div>
+              <div className="p-3 bg-purple-100 rounded-xl">
+                <Package className="w-6 h-6 text-purple-600" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">In Stock</p>
+                <p className="text-3xl font-bold text-green-600">
+                  {products.filter(p => p.inStock).length}
+                </p>
+              </div>
+              <div className="p-3 bg-green-100 rounded-xl">
+                <Tag className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Out of Stock</p>
+                <p className="text-3xl font-bold text-red-600">
+                  {products.filter(p => !p.inStock).length}
+                </p>
+              </div>
+              <div className="p-3 bg-red-100 rounded-xl">
+                <X className="w-6 h-6 text-red-600" />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Product Form */}
         {showForm && (
-          <div className="bg-premium-accent rounded-2xl p-8 mb-8">
-            <h2 className="text-2xl font-serif font-bold text-gray-900 mb-6">
-              {editingProduct ? 'Edit Product' : 'New Product'}
-            </h2>
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 mb-8 animate-fadeIn">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-serif font-bold text-gray-900">
+                {editingProduct ? 'Edit Product' : 'New Product'}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowForm(false);
+                  setEditingProduct(null);
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Product Name *
                   </label>
                   <input
@@ -309,11 +379,12 @@ export default function AdminPage() {
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-premium-badge focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    placeholder="e.g., Premium Cotton T-Shirt"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Price (₹) *
                   </label>
                   <input
@@ -321,11 +392,12 @@ export default function AdminPage() {
                     required
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-premium-badge focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    placeholder="999"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Category *
                   </label>
                   <select
@@ -334,85 +406,97 @@ export default function AdminPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, category: e.target.value as 'limited' | 'seasonal' })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-premium-badge focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                   >
                     <option value="limited">Limited Edition</option>
                     <option value="seasonal">Seasonal</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    In Stock
+                <div className="flex items-center">
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.inStock}
+                      onChange={(e) => setFormData({ ...formData, inStock: e.target.checked })}
+                      className="w-5 h-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500"
+                    />
+                    <span className="ml-3 text-sm font-semibold text-gray-700">In Stock</span>
                   </label>
-                  <input
-                    type="checkbox"
-                    checked={formData.inStock}
-                    onChange={(e) => setFormData({ ...formData, inStock: e.target.checked })}
-                    className="w-5 h-5"
-                  />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-premium-badge focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  placeholder="Describe your product..."
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Images * (Max 5)
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Product Images * (Max 5)
                 </label>
                 <div className="space-y-4">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleImageSelect}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-premium-badge file:text-white hover:file:bg-opacity-90"
-                  />
-                  <div className="grid grid-cols-5 gap-4">
-                    {imageUrls.map((url, index) => (
-                      <div key={`url-${index}`} className="relative">
-                        <img src={url} alt="" className="w-full h-24 object-cover rounded-lg" />
-                        <button
-                          type="button"
-                          onClick={() => removeImageUrl(index)}
-                          className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                    {imageFiles.map((file, index) => (
-                      <div key={`file-${index}`} className="relative">
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt=""
-                          className="w-full h-24 object-cover rounded-lg"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImageFile(index)}
-                          className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+                  <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-purple-500 hover:bg-purple-50 transition-all">
+                    <ImageIcon className="w-10 h-10 text-gray-400 mb-2" />
+                    <span className="text-sm text-gray-600 font-medium">Click to upload images</span>
+                    <span className="text-xs text-gray-500 mt-1">PNG, JPG up to 5MB</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageSelect}
+                      className="hidden"
+                    />
+                  </label>
+                  {(imageUrls.length > 0 || imageFiles.length > 0) && (
+                    <div className="grid grid-cols-5 gap-4">
+                      {imageUrls.map((url, index) => (
+                        <div key={`url-${index}`} className="relative group">
+                          <img
+                            src={url}
+                            alt=""
+                            className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImageUrl(index)}
+                            className="absolute -top-2 -right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                      {imageFiles.map((file, index) => (
+                        <div key={`file-${index}`} className="relative group">
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt=""
+                            className="w-full h-24 object-cover rounded-lg border-2 border-purple-300"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImageFile(index)}
+                            className="absolute -top-2 -right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div className="flex gap-4">
+              <div className="flex gap-4 pt-4">
                 <button
                   type="submit"
                   disabled={uploading}
-                  className="px-6 py-3 bg-premium-badge text-white rounded-lg font-medium hover:bg-opacity-90 transition-colors disabled:opacity-50"
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {uploading ? 'Uploading...' : editingProduct ? 'Update Product' : 'Create Product'}
                 </button>
@@ -422,7 +506,7 @@ export default function AdminPage() {
                     setShowForm(false);
                     setEditingProduct(null);
                   }}
-                  className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-400 transition-colors"
+                  className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-all"
                 >
                   Cancel
                 </button>
@@ -432,40 +516,66 @@ export default function AdminPage() {
         )}
 
         {/* Products List */}
-        <div className="bg-premium-accent rounded-2xl p-8">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
           <h2 className="text-2xl font-serif font-bold text-gray-900 mb-6">All Products</h2>
           {loadingProducts ? (
-            <div className="text-center py-12">
-              <div className="h-12 w-12 border-4 border-gray-300 border-t-premium-badge rounded-full animate-spin mx-auto" />
+            <div className="text-center py-16">
+              <div className="h-12 w-12 border-4 border-purple-300 border-t-purple-600 rounded-full animate-spin mx-auto" />
+              <p className="text-gray-600 mt-4">Loading products...</p>
+            </div>
+          ) : products.length === 0 ? (
+            <div className="text-center py-16">
+              <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-600 mb-2">No products yet</p>
+              <p className="text-sm text-gray-500">Click "Add Product" to create your first product</p>
             </div>
           ) : (
             <div className="grid gap-4">
               {products.map((product) => (
                 <div
                   key={product._id}
-                  className="flex items-center gap-4 p-4 bg-white rounded-lg hover:shadow-md transition-shadow"
+                  className="flex items-center gap-4 p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-200 hover:shadow-md hover:scale-[1.01] transition-all group"
                 >
                   <img
                     src={product.images[0]}
                     alt={product.name}
-                    className="w-20 h-20 object-cover rounded-lg"
+                    className="w-24 h-24 object-cover rounded-lg border-2 border-gray-200 group-hover:border-purple-300 transition-colors"
                   />
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900">{product.name}</h3>
-                    <p className="text-sm text-gray-600">
-                      ₹{product.price} • {product.category} • {product.inStock ? 'In Stock' : 'Out of Stock'}
-                    </p>
+                    <h3 className="font-semibold text-lg text-gray-900 mb-1">{product.name}</h3>
+                    <div className="flex items-center gap-4 text-sm">
+                      <span className="flex items-center gap-1 text-green-600 font-medium">
+                        <DollarSign className="w-4 h-4" />
+                        ₹{product.price}
+                      </span>
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        product.category === 'limited' 
+                          ? 'bg-purple-100 text-purple-700' 
+                          : 'bg-blue-100 text-blue-700'
+                      }`}>
+                        {product.category === 'limited' ? 'Limited Edition' : 'Seasonal'}
+                      </span>
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        product.inStock 
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-red-100 text-red-700'
+                      }`}>
+                        {product.inStock ? 'In Stock' : 'Out of Stock'}
+                      </span>
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleEdit(product)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      className="p-3 text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"
+                      title="Edit"
                     >
                       <Edit className="w-5 h-5" />
                     </button>
                     <button
                       onClick={() => handleDelete(product._id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      className="p-3 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                      title="Delete"
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>

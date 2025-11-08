@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Search as SearchIcon } from 'lucide-react';
@@ -18,7 +18,7 @@ interface Product {
   inStock: boolean;
 }
 
-export default function SearchPage() {
+function SearchContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
   
@@ -233,5 +233,20 @@ export default function SearchPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-premium-base pt-24 pb-16">
+        <div className="max-w-7xl mx-auto px-4 text-center py-20">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+          <p className="mt-4 text-gray-700">Loading search...</p>
+        </div>
+      </main>
+    }>
+      <SearchContent />
+    </Suspense>
   );
 }

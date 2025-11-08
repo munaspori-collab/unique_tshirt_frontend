@@ -93,10 +93,16 @@ export default function AdminPage() {
         formData.append('images', file);
       });
 
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      if (!token) {
+        alert('Authentication required');
+        return imageUrls;
+      }
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/upload/images`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+          Authorization: `Bearer ${token}`,
         },
         body: formData,
       });
@@ -140,12 +146,18 @@ export default function AdminPage() {
     };
 
     try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      if (!token) {
+        alert('Authentication required');
+        return;
+      }
+
       if (editingProduct) {
         await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products/${editingProduct._id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(productData),
         });
@@ -154,7 +166,7 @@ export default function AdminPage() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(productData),
         });
@@ -207,10 +219,16 @@ export default function AdminPage() {
     if (!confirm('Are you sure you want to delete this product?')) return;
 
     try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      if (!token) {
+        alert('Authentication required');
+        return;
+      }
+
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products/${id}`, {
         method: 'DELETE',
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+          Authorization: `Bearer ${token}`,
         },
       });
       loadProducts();

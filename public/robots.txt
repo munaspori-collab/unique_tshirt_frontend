@@ -1,0 +1,15 @@
+# Unique T-shirts - Robots.txt
+
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/admin/
+Disallow: /account/
+Disallow: /_next/
+Disallow: /admin-login/
+
+# Sitemap
+Sitemap: https://uniquetshirts.com/sitemap.xml
+
+# Crawl delay (optional)
+Crawl-delay: 1

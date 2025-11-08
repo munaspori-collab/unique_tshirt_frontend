@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { ArrowLeft, Mail, Phone, MapPin, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Phone, User, MessageSquare } from 'lucide-react';
+import { FaInstagram, FaWhatsapp } from 'react-icons/fa';
 
 export default function ContactPage() {
   return (
@@ -17,33 +18,33 @@ export default function ContactPage() {
 
         <div className="grid md:grid-cols-2 gap-8 mb-12">
           <div className="bg-premium-accent rounded-2xl p-8">
-            <Mail className="w-10 h-10 mb-4 text-gray-700" />
-            <h3 className="text-xl font-serif font-bold text-gray-900 mb-2">Email Us</h3>
-            <a href="mailto:hello@uniquetshirts.com" className="text-gray-700 hover:text-gray-900 transition-colors">
-              hello@uniquetshirts.com
-            </a>
+            <User className="w-10 h-10 mb-4 text-gray-700" />
+            <h3 className="text-xl font-serif font-bold text-gray-900 mb-2">Owner</h3>
+            <p className="text-gray-700 font-semibold text-lg">Rahikul Makhtum</p>
           </div>
 
           <div className="bg-premium-accent rounded-2xl p-8">
-            <Phone className="w-10 h-10 mb-4 text-gray-700" />
-            <h3 className="text-xl font-serif font-bold text-gray-900 mb-2">Call Us</h3>
-            <a href="tel:+1234567890" className="text-gray-700 hover:text-gray-900 transition-colors">
-              +1 (234) 567-890
+            <FaWhatsapp className="w-10 h-10 mb-4 text-gray-700" />
+            <h3 className="text-xl font-serif font-bold text-gray-900 mb-2">WhatsApp</h3>
+            <a href="https://wa.me/8801919069898" target="_blank" rel="noopener noreferrer" className="text-gray-700 hover:text-gray-900 transition-colors text-lg">
+              +880 1919-069898
             </a>
+            <p className="text-sm text-gray-600 mt-2">Click to chat with us instantly!</p>
           </div>
 
           <div className="bg-premium-accent rounded-2xl p-8">
-            <MapPin className="w-10 h-10 mb-4 text-gray-700" />
-            <h3 className="text-xl font-serif font-bold text-gray-900 mb-2">Visit Us</h3>
-            <p className="text-gray-700">123 Fashion Street<br />Style City, SC 12345</p>
+            <FaInstagram className="w-10 h-10 mb-4 text-gray-700" />
+            <h3 className="text-xl font-serif font-bold text-gray-900 mb-2">Instagram</h3>
+            <a href="https://instagram.com/r_m_abir71" target="_blank" rel="noopener noreferrer" className="text-gray-700 hover:text-gray-900 transition-colors text-lg">
+              @r_m_abir71
+            </a>
+            <p className="text-sm text-gray-600 mt-2">Follow us for updates!</p>
           </div>
 
           <div className="bg-premium-accent rounded-2xl p-8">
             <MessageSquare className="w-10 h-10 mb-4 text-gray-700" />
-            <h3 className="text-xl font-serif font-bold text-gray-900 mb-2">WhatsApp</h3>
-            <a href="https://wa.me/1234567890" target="_blank" rel="noopener noreferrer" className="text-gray-700 hover:text-gray-900 transition-colors">
-              Chat with us
-            </a>
+            <h3 className="text-xl font-serif font-bold text-gray-900 mb-2">Quick Contact</h3>
+            <p className="text-gray-700">Message us on WhatsApp or Instagram for fastest response!</p>
           </div>
         </div>
 

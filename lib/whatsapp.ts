@@ -1,8 +1,10 @@
 import { Product, Size } from '@/types';
 
 export const WHATSAPP_CONFIG = {
-  businessNumber: '1234567890', // Replace with actual WhatsApp business number
+  businessNumber: '8801919069898', // Rahikul Makhtum's WhatsApp
   businessName: 'Unique T-shirts',
+  ownerName: 'Rahikul Makhtum',
+  instagram: '@r_m_abir71',
 };
 
 interface OrderDetails {

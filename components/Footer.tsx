@@ -38,10 +38,8 @@ export default function Footer() {
   };
 
   const socialLinks = [
-    { icon: FaInstagram, href: 'https://instagram.com', label: 'Instagram' },
-    { icon: FaFacebook, href: 'https://facebook.com', label: 'Facebook' },
-    { icon: FaTwitter, href: 'https://twitter.com', label: 'Twitter' },
-    { icon: FaWhatsapp, href: 'https://wa.me/1234567890', label: 'WhatsApp' },
+    { icon: FaInstagram, href: 'https://instagram.com/r_m_abir71', label: 'Instagram' },
+    { icon: FaWhatsapp, href: 'https://wa.me/8801919069898', label: 'WhatsApp' },
   ];
 
   return (
@@ -157,28 +155,28 @@ export default function Footer() {
         <div className="border-t border-premium-accent pt-8 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
             <div className="flex items-start gap-3">
-              <MapPin className="h-5 w-5 text-gray-700 flex-shrink-0 mt-0.5" />
+              <FaWhatsapp className="h-5 w-5 text-gray-700 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium mb-1">Address</p>
-                <p className="text-gray-700">123 Fashion Street, Style City, SC 12345</p>
+                <p className="font-medium mb-1">WhatsApp</p>
+                <a href="https://wa.me/8801919069898" className="text-gray-700 hover:text-gray-900">
+                  +880 1919-069898
+                </a>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <Mail className="h-5 w-5 text-gray-700 flex-shrink-0 mt-0.5" />
+              <FaInstagram className="h-5 w-5 text-gray-700 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium mb-1">Email</p>
-                <a href="mailto:hello@uniquetshirts.com" className="text-gray-700 hover:text-gray-900">
-                  hello@uniquetshirts.com
+                <p className="font-medium mb-1">Instagram</p>
+                <a href="https://instagram.com/r_m_abir71" target="_blank" rel="noopener noreferrer" className="text-gray-700 hover:text-gray-900">
+                  @r_m_abir71
                 </a>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Phone className="h-5 w-5 text-gray-700 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium mb-1">Phone</p>
-                <a href="tel:+1234567890" className="text-gray-700 hover:text-gray-900">
-                  +1 (234) 567-890
-                </a>
+                <p className="font-medium mb-1">Owner</p>
+                <p className="text-gray-700 font-medium">Rahikul Makhtum</p>
               </div>
             </div>
           </div>
@@ -189,7 +187,7 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-700">
             <p>&copy; {new Date().getFullYear()} Unique T-shirts. All rights reserved.</p>
             <p className="flex items-center gap-2">
-              Made with <span className="text-red-600">♥</span> for fashion lovers
+              Created by <span className="font-semibold">Rahikul Makhtum</span> with <span className="text-red-600">♥</span>
             </p>
           </div>
         </div>

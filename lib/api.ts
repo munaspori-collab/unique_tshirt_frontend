@@ -41,3 +41,6 @@ export function handleApiError(error: unknown): string {
   }
   return 'An unexpected error occurred';
 }
+
+// Default export
+export default api;

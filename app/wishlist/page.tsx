@@ -1,7 +1,95 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Heart, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, Heart, ShoppingBag, Trash2, X } from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
+import { openWhatsAppCheckout } from '@/lib/whatsapp';
+import { Size } from '@/types';
+
+interface Product {
+  _id: string;
+  name: string;
+  slug: string;
+  price: number;
+  images: string[];
+  category: 'limited' | 'seasonal';
+  inStock: boolean;
+  sizes?: string[];
+  colors?: string[];
+}
 
 export default function WishlistPage() {
+  const { user, loading: authLoading } = useAuth();
+  const [wishlist, setWishlist] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!authLoading) {
+      loadWishlist();
+    }
+  }, [authLoading, user]);
+
+  const loadWishlist = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/wishlist`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+      });
+      const data = await response.json();
+      if (data.ok) {
+        setWishlist(data.wishlist || []);
+      }
+    } catch (error) {
+      console.error('Failed to load wishlist:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removeFromWishlist = async (productId: string) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/wishlist/${productId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+      });
+      const data = await response.json();
+      if (data.ok) {
+        setWishlist(wishlist.filter((p) => p._id !== productId));
+      }
+    } catch (error) {
+      console.error('Failed to remove from wishlist:', error);
+    }
+  };
+
+  const handleBuyNow = (product: Product) => {
+    openWhatsAppCheckout({
+      productName: product.name,
+      productId: product._id,
+      size: product.sizes?.[0] as Size || 'M' as Size,
+      color: product.colors?.[0] || 'Black',
+      price: product.price,
+    });
+  };
+
+  if (authLoading || loading) {
+    return (
+      <main className="min-h-screen bg-premium-base pt-24 pb-16">
+        <div className="max-w-7xl mx-auto px-4 text-center py-20">
+          <div className="h-12 w-12 border-4 border-gray-300 border-t-premium-badge rounded-full animate-spin mx-auto" />
+          <p className="mt-4 text-gray-700">Loading wishlist...</p>
+        </div>
+      </main>
+    );
+  }
   return (
     <main className="min-h-screen bg-premium-base pt-24 pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -23,37 +111,115 @@ export default function WishlistPage() {
           </p>
         </div>
 
-        {/* Empty State */}
-        <div className="max-w-2xl mx-auto text-center bg-premium-accent rounded-2xl p-12">
-          <ShoppingBag className="w-20 h-20 mx-auto mb-6 text-gray-400" />
-          <h2 className="text-2xl font-serif font-bold text-gray-900 mb-4">
-            Your wishlist is empty
-          </h2>
-          <p className="text-gray-700 mb-8">
-            Start adding your favorite products to your wishlist. Sign in to save them across devices.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        {/* Empty or not signed in */}
+        {!user ? (
+          <div className="max-w-2xl mx-auto text-center bg-premium-accent rounded-2xl p-12">
+            <Heart className="w-20 h-20 mx-auto mb-6 text-gray-400" />
+            <h2 className="text-2xl font-serif font-bold text-gray-900 mb-4">
+              Sign in to save your wishlist
+            </h2>
+            <p className="text-gray-700 mb-8">
+              Create a wishlist to save your favorite products and access them from any device.
+            </p>
             <Link
-              href="/shop/limited"
-              className="px-6 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+              href="/account"
+              className="inline-block px-6 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
             >
-              Browse Limited Edition
-            </Link>
-            <Link
-              href="/shop/seasonal"
-              className="px-6 py-3 bg-premium-badge text-gray-900 rounded-lg font-medium hover:bg-premium-highlight transition-colors"
-            >
-              Browse Seasonal
+              Sign In
             </Link>
           </div>
-        </div>
-
-        {/* Note about authentication */}
-        <div className="mt-12 max-w-2xl mx-auto text-center">
-          <p className="text-sm text-gray-600">
-            💡 <strong>Tip:</strong> Sign in to sync your wishlist across all your devices
-          </p>
-        </div>
+        ) : wishlist.length === 0 ? (
+          <div className="max-w-2xl mx-auto text-center bg-premium-accent rounded-2xl p-12">
+            <ShoppingBag className="w-20 h-20 mx-auto mb-6 text-gray-400" />
+            <h2 className="text-2xl font-serif font-bold text-gray-900 mb-4">
+              Your wishlist is empty
+            </h2>
+            <p className="text-gray-700 mb-8">
+              Start adding your favorite products to your wishlist
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                href="/shop/limited"
+                className="px-6 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+              >
+                Browse Limited Edition
+              </Link>
+              <Link
+                href="/shop/seasonal"
+                className="px-6 py-3 bg-premium-badge text-gray-900 rounded-lg font-medium hover:bg-premium-highlight transition-colors"
+              >
+                Browse Seasonal
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {wishlist.map((product) => (
+              <div
+                key={product._id}
+                className="bg-premium-accent rounded-2xl overflow-hidden hover:shadow-xl transition-all"
+              >
+                <Link href={`/shop/${product.category}/${product.slug}`}>
+                  <div className="aspect-square bg-premium-hover overflow-hidden">
+                    {product.images && product.images[0] ? (
+                      <img
+                        src={product.images[0]}
+                        alt={product.name}
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-6xl">
+                        {product.category === 'limited' ? '✨' : '🍂'}
+                      </div>
+                    )}
+                  </div>
+                </Link>
+                <div className="p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-bold text-white ${
+                        product.category === 'limited' ? 'bg-yellow-500' : 'bg-green-500'
+                      }`}
+                    >
+                      {product.category === 'limited' ? 'LIMITED' : 'SEASONAL'}
+                    </span>
+                    {!product.inStock && (
+                      <span className="px-2 py-1 bg-red-500 text-white rounded-full text-xs font-bold">
+                        OUT OF STOCK
+                      </span>
+                    )}
+                  </div>
+                  <Link href={`/shop/${product.category}/${product.slug}`}>
+                    <h3 className="font-serif font-semibold text-lg text-gray-900 mb-2 hover:text-premium-badge transition-colors">
+                      {product.name}
+                    </h3>
+                  </Link>
+                  <p className="text-xl font-bold text-gray-900 mb-4">₹{product.price}</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleBuyNow(product)}
+                      disabled={!product.inStock}
+                      className={`flex-1 py-2 rounded-lg font-medium transition-all ${
+                        product.inStock
+                          ? 'bg-gray-900 text-white hover:bg-gray-800'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                    >
+                      Buy Now
+                    </button>
+                    <button
+                      onClick={() => removeFromWishlist(product._id)}
+                      className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                      title="Remove from wishlist"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </main>
   );

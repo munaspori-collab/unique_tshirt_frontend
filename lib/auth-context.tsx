@@ -15,7 +15,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
-  login: (googleToken: string) => Promise<void>;
+  login: (idToken: string) => Promise<void>;
   logout: () => void;
   isAdmin: boolean;
 }
@@ -63,22 +63,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function login(googleToken: string) {
+  async function login(idToken: string) {
     try {
       console.log('Attempting login with API:', API_BASE_URL);
+      console.log('Sending ID token (first 20 chars):', idToken.substring(0, 20) + '...');
+      
       const response = await fetch(`${API_BASE_URL}/api/auth/google`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ token: googleToken }),
+        body: JSON.stringify({ idToken }),
       });
 
       console.log('Response status:', response.status);
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-        console.error('Auth error response:', errorData);
+        const errorText = await response.text();
+        console.error('Auth error response:', errorText);
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { message: errorText || 'Authentication failed' };
+        }
         throw new Error(errorData.message || 'Authentication failed');
       }
 

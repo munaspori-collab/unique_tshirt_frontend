@@ -6,11 +6,23 @@ export async function generateStaticParams() {
       cache: 'no-store'
     });
     const data = await response.json();
-    const products = data.ok ? data.data : [];
     
-    return products.map((product: any) => ({
-      slug: product.slug,
-    }));
+    // Handle different response formats
+    let products: any[] = [];
+    if (Array.isArray(data)) {
+      products = data;
+    } else if (data.products && Array.isArray(data.products)) {
+      products = data.products;
+    } else if (data.data && Array.isArray(data.data)) {
+      products = data.data;
+    }
+    
+    // Filter for limited category and map to slugs
+    return products
+      .filter((product: any) => product.category === 'limited')
+      .map((product: any) => ({
+        slug: product.slug,
+      }));
   } catch (error) {
     console.error('Error generating static params:', error);
     // Return empty array to allow dynamic fallback

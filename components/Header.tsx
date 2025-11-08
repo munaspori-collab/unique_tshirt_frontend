@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, Search, User, Heart, LogOut, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '@/lib/auth-context';
 
 const categories = [
@@ -41,18 +40,10 @@ export default function Header() {
     }
   };
 
-  const handleGoogleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-        await login(tokenResponse.access_token);
-      } catch (error) {
-        console.error('Login failed:', error);
-      }
-    },
-    onError: () => {
-      console.error('Google login failed');
-    },
-  });
+  const handleGoogleLogin = () => {
+    // Google OAuth not configured
+    alert('Google Sign-In is not configured. Please contact the administrator.');
+  };
 
   const handleLogout = () => {
     logout();

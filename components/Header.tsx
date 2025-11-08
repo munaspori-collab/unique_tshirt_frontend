@@ -47,10 +47,12 @@ export default function Header() {
         await login(tokenResponse.access_token);
       } catch (error) {
         console.error('Login failed:', error);
+        alert('Login failed. Please try again.');
       }
     },
-    onError: () => {
-      console.error('Google login failed');
+    onError: (error) => {
+      console.error('Google login failed:', error);
+      alert('Google Sign-In failed. Please try again.');
     },
   });
 

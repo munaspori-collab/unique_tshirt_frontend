@@ -65,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function login(googleToken: string) {
     try {
+      console.log('Attempting login with API:', API_BASE_URL);
       const response = await fetch(`${API_BASE_URL}/api/auth/google`, {
         method: 'POST',
         headers: {
@@ -73,11 +74,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ token: googleToken }),
       });
 
+      console.log('Response status:', response.status);
+
       if (!response.ok) {
-        throw new Error('Authentication failed');
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        console.error('Auth error response:', errorData);
+        throw new Error(errorData.message || 'Authentication failed');
       }
 
       const data = await response.json();
+      console.log('Auth successful, received data');
       const { token: jwtToken, user: userData } = data;
 
       // Save to localStorage

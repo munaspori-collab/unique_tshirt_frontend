@@ -47,7 +47,8 @@ export default function Header() {
         await login(tokenResponse.access_token);
       } catch (error) {
         console.error('Login failed:', error);
-        alert('Login failed. Please try again.');
+        const errorMessage = error instanceof Error ? error.message : 'Login failed';
+        alert(`Authentication failed: ${errorMessage}\n\nPlease check:\n1. Backend is running\n2. CORS is configured\n3. Google Client ID is set on backend`);
       }
     },
     onError: (error) => {

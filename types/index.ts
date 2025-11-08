@@ -17,7 +17,7 @@ export interface Product {
   updatedAt: Date;
 }
 
-export type ProductCategory = 'men' | 'women' | 'unisex' | 'limited' | 'seasonal';
+export type ProductCategory = 'limited' | 'seasonal';
 
 export type Size = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL';
 

@@ -61,7 +61,7 @@ export default function HeroSection() {
               className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
             >
               <Link
-                href="/shop/men"
+                href="/shop/limited"
                 className="group inline-flex items-center justify-center px-8 py-4 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-all hover:shadow-xl hover:scale-105"
               >
                 Shop Now

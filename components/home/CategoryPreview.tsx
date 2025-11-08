@@ -51,24 +51,6 @@ function CategoryCard({ name, href, emoji, description, index }: CategoryCardPro
 export default function CategoryPreview() {
   const categories = [
     {
-      name: 'Men',
-      href: '/shop/men',
-      emoji: '👔',
-      description: 'Bold and classic styles for the modern man',
-    },
-    {
-      name: 'Women',
-      href: '/shop/women',
-      emoji: '👗',
-      description: 'Elegant and comfortable designs for every occasion',
-    },
-    {
-      name: 'Unisex',
-      href: '/shop/unisex',
-      emoji: '👕',
-      description: 'Versatile styles for everyone',
-    },
-    {
       name: 'Limited Edition',
       href: '/shop/limited',
       emoji: '✨',
@@ -100,15 +82,9 @@ export default function CategoryPreview() {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {categories.slice(0, 3).map((category, index) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          {categories.map((category, index) => (
             <CategoryCard key={category.name} {...category} index={index} />
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8 max-w-4xl mx-auto">
-          {categories.slice(3).map((category, index) => (
-            <CategoryCard key={category.name} {...category} index={index + 3} />
           ))}
         </div>
       </div>

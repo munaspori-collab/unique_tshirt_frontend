@@ -7,9 +7,6 @@ import { Menu, X, Search, User, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const categories = [
-  { name: 'Men', href: '/shop/men' },
-  { name: 'Women', href: '/shop/women' },
-  { name: 'Unisex', href: '/shop/unisex' },
   { name: 'Limited Edition', href: '/shop/limited' },
   { name: 'Seasonal', href: '/shop/seasonal' },
 ];

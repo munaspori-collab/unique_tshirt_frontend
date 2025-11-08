@@ -20,10 +20,8 @@ export default function Footer() {
 
   const footerLinks = {
     shop: [
-      { name: 'Men', href: '/shop/men' },
-      { name: 'Women', href: '/shop/women' },
-      { name: 'Unisex', href: '/shop/unisex' },
       { name: 'Limited Edition', href: '/shop/limited' },
+      { name: 'Seasonal', href: '/shop/seasonal' },
     ],
     company: [
       { name: 'About Us', href: '/about' },

@@ -75,10 +75,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth">
-      <head>
-        <GoogleAnalytics />
-      </head>
       <body className="antialiased">
+        <GoogleAnalytics />
         <Providers>
           <Header />
           <main className="pt-20">{children}</main>

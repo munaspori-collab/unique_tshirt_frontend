@@ -1,5 +1,7 @@
 import LimitedProductClient from '@/components/product/LimitedProductClient';
 
+export const dynamicParams = false;
+
 export async function generateStaticParams() {
   try {
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://unique-tshirt-backend.onrender.com';

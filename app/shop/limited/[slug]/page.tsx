@@ -2,6 +2,22 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+
+// Required for static export
+export async function generateStaticParams() {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://unique-tshirt-backend.onrender.com'}/api/products?category=limited`);
+    const data = await response.json();
+    const products = data.ok ? data.data : [];
+    
+    return products.map((product: any) => ({
+      slug: product.slug,
+    }));
+  } catch (error) {
+    console.error('Error generating static params:', error);
+    return [];
+  }
+}
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Star, Heart, Share2, ShoppingBag } from 'lucide-react';

@@ -58,9 +58,13 @@ export default function AdminPage() {
     try {
       setLoadingProducts(true);
       const response = await api.getProducts();
-      setProducts(response);
+      console.log('Products API response:', response);
+      // Ensure response is an array
+      const productsArray = Array.isArray(response) ? response : [];
+      setProducts(productsArray);
     } catch (error) {
       console.error('Failed to load products:', error);
+      setProducts([]);
     } finally {
       setLoadingProducts(false);
     }

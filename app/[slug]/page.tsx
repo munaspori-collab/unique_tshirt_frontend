@@ -1,61 +1,33 @@
-'use client';
+import ClientProductRedirect from '@/components/ClientProductRedirect';
 
-import { useEffect, useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-
-async function fetchProductClient(slug: string) {
-  const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+export async function generateStaticParams() {
   try {
-    const res = await fetch(`${base}/api/products/${encodeURIComponent(slug)}`);
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (Array.isArray(data)) return data[0] ?? null;
-    if (data?.data) return data.data;
-    if (data?.product) return data.product;
-    return null;
-  } catch {
-    return null;
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://unique-tshirt-backend.onrender.com';
+    // Fetch both categories to collect all slugs
+    const [limitedRes, seasonalRes] = await Promise.all([
+      fetch(`${API_URL}/api/products?category=limited`),
+      fetch(`${API_URL}/api/products?category=seasonal`),
+    ]);
+
+    const parse = async (res: Response): Promise<any[]> => {
+      if (!res.ok) return [];
+      const data = await res.json();
+      if (Array.isArray(data)) return data;
+      if (data?.data && Array.isArray(data.data)) return data.data;
+      if (data?.products && Array.isArray(data.products)) return data.products;
+      return [];
+    };
+
+    const [limited, seasonal] = await Promise.all([parse(limitedRes), parse(seasonalRes)]);
+    const all = [...limited, ...seasonal];
+    const slugs = Array.from(new Set(all.map((p: any) => p.slug).filter(Boolean)));
+    return slugs.map((slug) => ({ slug }));
+  } catch (e) {
+    console.error('generateStaticParams /[slug] failed:', e);
+    return [];
   }
 }
 
-export default function Page() {
-  const router = useRouter();
-  const params = useParams();
-  const slug = (params?.slug as string) || '';
-  const [status, setStatus] = useState<'loading' | 'notfound'>('loading');
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      const product = await fetchProductClient(slug);
-      if (!mounted) return;
-      if (product?.category) {
-        router.replace(`/shop/${product.category}/${slug}`);
-      } else {
-        setStatus('notfound');
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, [router, slug]);
-
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen bg-premium-base pt-24 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-          <p className="mt-4 text-gray-700">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-premium-base pt-24 flex items-center justify-center">
-      <div className="text-center">
-        <p className="text-gray-800 text-lg font-medium">Product not found</p>
-      </div>
-    </div>
-  );
+export default function Page({ params }: { params: { slug: string } }) {
+  return <ClientProductRedirect slug={params.slug} />;
 }

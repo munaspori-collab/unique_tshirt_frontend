@@ -1,12 +1,12 @@
-import { notFound, redirect } from 'next/navigation';
+'use client';
 
-async function fetchProduct(slug: string) {
+import { useEffect, useState } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+
+async function fetchProductClient(slug: string) {
   const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
   try {
-    const res = await fetch(`${base}/api/products/${encodeURIComponent(slug)}`, {
-      // Let this be dynamic to always resolve newly created products
-      cache: 'no-store',
-    });
+    const res = await fetch(`${base}/api/products/${encodeURIComponent(slug)}`);
     if (!res.ok) return null;
     const data = await res.json();
     if (Array.isArray(data)) return data[0] ?? null;
@@ -18,14 +18,44 @@ async function fetchProduct(slug: string) {
   }
 }
 
-export default async function Page({ params }: { params: { slug: string } }) {
-  const slug = params.slug;
-  const product = await fetchProduct(slug);
+export default function Page() {
+  const router = useRouter();
+  const params = useParams();
+  const slug = (params?.slug as string) || '';
+  const [status, setStatus] = useState<'loading' | 'notfound'>('loading');
 
-  if (!product || !product.category) {
-    notFound();
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const product = await fetchProductClient(slug);
+      if (!mounted) return;
+      if (product?.category) {
+        router.replace(`/shop/${product.category}/${slug}`);
+      } else {
+        setStatus('notfound');
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [router, slug]);
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-premium-base pt-24 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+          <p className="mt-4 text-gray-700">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
-  // Redirect to the canonical category route used by the app
-  redirect(`/shop/${product.category}/${slug}`);
+  return (
+    <div className="min-h-screen bg-premium-base pt-24 flex items-center justify-center">
+      <div className="text-center">
+        <p className="text-gray-800 text-lg font-medium">Product not found</p>
+      </div>
+    </div>
+  );
 }

@@ -7,6 +7,8 @@ import { ArrowLeft, Star, Heart, Share2, ShoppingBag, X } from 'lucide-react';
 import { api, handleApiError } from '@/lib/api';
 import { openWhatsAppCheckout } from '@/lib/whatsapp';
 import { Size } from '@/types';
+import { useAuth } from '@/lib/auth-context';
+import { API_BASE_URL } from '@/lib/api';
 
 interface Product {
   _id: string;
@@ -34,6 +36,8 @@ export default function SeasonalProductClient({ slug }: { slug: string }) {
   const defaultColors = ['Black','White','Blue','Red'];
   const [selectedImage, setSelectedImage] = useState(0);
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const { token } = useAuth();
 
   useEffect(() => {
     async function fetchProduct() {
@@ -52,6 +56,23 @@ export default function SeasonalProductClient({ slug }: { slug: string }) {
     }
     fetchProduct();
   }, [slug]);
+
+  useEffect(() => {
+    async function checkWishlist(p: Product) {
+      try {
+        if (!token || !p?._id) return;
+        const res = await fetch(`${API_BASE_URL}/api/wishlist`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const list: any[] = data?.wishlist || data?.data || (Array.isArray(data) ? data : []);
+        const exists = list.some((it: any) => (it?._id || it?.id) === p._id);
+        setIsWishlisted(!!exists);
+      } catch {}
+    }
+    if (product) checkWishlist(product);
+  }, [product, token]);
 
   const handleBuyNow = () => {
     if (!product) return;
@@ -222,8 +243,28 @@ export default function SeasonalProductClient({ slug }: { slug: string }) {
                 <ShoppingBag className="w-5 h-5" />
                 {product.inStock ? 'Buy Now via WhatsApp' : 'Out of Stock'}
               </button>
-              <button className="p-4 bg-premium-accent rounded-lg hover:bg-premium-badge transition-colors">
-                <Heart className="w-5 h-5 text-gray-700" />
+              <button onClick={async () => {
+                if (!product) return;
+                if (!token) { if (typeof window !== 'undefined') window.location.href = '/account'; return; }
+                try {
+                  if (!isWishlisted) {
+                    let ok = false;
+                    try {
+                      const r1 = await fetch(`${API_BASE_URL}/api/wishlist/${product._id}`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+                      ok = r1.ok;
+                    } catch {}
+                    if (!ok) {
+                      const r2 = await fetch(`${API_BASE_URL}/api/wishlist`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ productId: product._id }) });
+                      ok = r2.ok;
+                    }
+                    if (ok) setIsWishlisted(true);
+                  } else {
+                    const del = await fetch(`${API_BASE_URL}/api/wishlist/${product._id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+                    if (del.ok) setIsWishlisted(false);
+                  }
+                } catch {}
+              }} className={`p-4 rounded-lg transition-colors ${isWishlisted ? 'bg-red-100 hover:bg-red-200' : 'bg-premium-accent hover:bg-premium-badge'}`}>
+                <Heart className={`w-5 h-5 ${isWishlisted ? 'text-red-600' : 'text-gray-700'}`} />
               </button>
               <button className="p-4 bg-premium-accent rounded-lg hover:bg-premium-badge transition-colors">
                 <Share2 className="w-5 h-5 text-gray-700" />

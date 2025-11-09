@@ -9,6 +9,7 @@ import { openWhatsAppCheckout } from '@/lib/whatsapp';
 import { getRatingSummary, getMyRating, setMyRating, UserRating } from '@/lib/ratings';
 import { Size } from '@/types';
 import { useParams } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
 
 interface Product {
   _id: string;
@@ -39,9 +40,11 @@ export default function ProductClient({ slug }: { slug?: string }) {
   const [ratingAvg, setRatingAvg] = useState(0);
   const [ratingCount, setRatingCount] = useState(0);
   const [myRating, setMyRatingState] = useState<UserRating | undefined>(undefined);
+  const [isWishlisted, setIsWishlisted] = useState(false);
 
   const params = useParams();
   const effectiveSlug = (slug ?? (params && (params as any).slug ? String((params as any).slug) : undefined)) as string | undefined;
+  const { user, token } = useAuth();
 
   useEffect(() => {
     async function fetchProduct() {
@@ -88,6 +91,23 @@ export default function ProductClient({ slug }: { slug?: string }) {
     fetchProduct();
   }, [effectiveSlug]);
 
+  useEffect(() => {
+    async function checkWishlist(p: Product) {
+      try {
+        if (!token || !p?._id) return;
+        const res = await fetch(`${API_BASE_URL}/api/wishlist`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const list: any[] = data?.wishlist || data?.data || (Array.isArray(data) ? data : []);
+        const exists = list.some((it: any) => (it?._id || it?.id) === p._id);
+        setIsWishlisted(!!exists);
+      } catch {}
+    }
+    if (product) checkWishlist(product);
+  }, [product, token]);
+
   const handleBuyNow = () => {
     if (!product) return;
     const productUrl = typeof window !== 'undefined' && product.slug ? `${window.location.origin}/product?slug=${encodeURIComponent(product.slug)}` : undefined;
@@ -102,6 +122,67 @@ export default function ProductClient({ slug }: { slug?: string }) {
       imageUrl,
     });
   };
+
+  async function toggleWishlist() {
+    if (!product) return;
+    if (!token) {
+      if (typeof window !== 'undefined') window.location.href = '/account';
+      return;
+    }
+    try {
+      if (!isWishlisted) {
+        // Try POST /api/wishlist/:id then fallback to body
+        let ok = false;
+        try {
+          const r1 = await fetch(`${API_BASE_URL}/api/wishlist/${product._id}`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          ok = r1.ok;
+        } catch {}
+        if (!ok) {
+          const r2 = await fetch(`${API_BASE_URL}/api/wishlist`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ productId: product._id }),
+          });
+          ok = r2.ok;
+        }
+        if (ok) setIsWishlisted(true);
+      } else {
+        const del = await fetch(`${API_BASE_URL}/api/wishlist/${product._id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (del.ok) setIsWishlisted(false);
+      }
+    } catch (e) {
+      console.error('Wishlist toggle failed', e);
+    }
+  }
+
+  async function submitRatingBackend(stars: UserRating) {
+    if (!product) return;
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const payload = JSON.stringify({ productId: product._id, rating: stars });
+      const attempts = [
+        `${API_BASE_URL}/api/ratings`,
+        `${API_BASE_URL}/api/products/${product._id}/rating`,
+        `${API_BASE_URL}/api/products/rate`,
+      ];
+      for (const url of attempts) {
+        try {
+          const res = await fetch(url, { method: 'POST', headers, body: payload });
+          if (res.ok) break;
+        } catch {}
+      }
+    } catch {}
+  }
 
   const badge = product?.category === 'limited'
     ? { text: 'LIMITED EDITION', className: 'bg-yellow-500' }
@@ -269,8 +350,8 @@ export default function ProductClient({ slug }: { slug?: string }) {
                 <ShoppingBag className="w-5 h-5" />
                 {product.inStock ? 'Buy Now via WhatsApp' : 'Out of Stock'}
               </button>
-              <button className="p-4 bg-premium-accent rounded-lg hover:bg-premium-badge transition-colors">
-                <Heart className="w-5 h-5 text-gray-700" />
+              <button onClick={toggleWishlist} className={`p-4 rounded-lg transition-colors ${isWishlisted ? 'bg-red-100 hover:bg-red-200' : 'bg-premium-accent hover:bg-premium-badge'}`} title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}>
+                <Heart className={`w-5 h-5 ${isWishlisted ? 'text-red-600' : 'text-gray-700'}`} />
               </button>
               <button className="p-4 bg-premium-accent rounded-lg hover:bg-premium-badge transition-colors">
                 <Share2 className="w-5 h-5 text-gray-700" />
@@ -286,13 +367,14 @@ export default function ProductClient({ slug }: { slug?: string }) {
                     <button
                       key={n}
                       aria-label={`Rate ${n} star${n>1?'s':''}`}
-                      onClick={() => {
+                      onClick={async () => {
                         if (!product?._id) return;
                         setMyRating(product._id, n as UserRating);
                         const summary = getRatingSummary(product._id);
                         setRatingAvg(summary.average);
                         setRatingCount(summary.count);
                         setMyRatingState(n as UserRating);
+                        await submitRatingBackend(n as UserRating);
                       }}
                       className="p-1"
                     >

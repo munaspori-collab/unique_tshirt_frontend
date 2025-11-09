@@ -1,9 +1,40 @@
 'use client';
 
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { api } from '@/lib/api';
 
 export default function HeroSection() {
+  // Right-card slideshow state
+  const [images, setImages] = useState<string[]>([]);
+  const [idx, setIdx] = useState(0);
+  const trackRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [limited, seasonal] = await Promise.all([
+          api.getProducts('limited'),
+          api.getProducts('seasonal'),
+        ]);
+        const combined = [...limited.data, ...seasonal.data]
+          .map((p: any) => p?.images?.[0])
+          .filter(Boolean);
+        setImages(combined.slice(0, 10));
+      } catch {
+        // ignore - keep placeholder card if fetch fails
+      }
+    })();
+  }, []);
+
+  // autoplay every 2s (right -> left)
+  useEffect(() => {
+    if (images.length <= 1) return;
+    const id = setInterval(() => setIdx((n) => (n + 1) % images.length), 2000);
+    return () => clearInterval(id);
+  }, [images.length]);
+
   return (
     <section className="relative bg-gradient-to-br from-premium-hover via-premium-base to-premium-accent overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
@@ -25,7 +56,7 @@ export default function HeroSection() {
 
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Link
-                href="/shop/limited"
+                href="/shop"
                 className="inline-flex items-center justify-center px-6 py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-all hover:shadow-lg"
               >
                 Shop Now
@@ -55,7 +86,7 @@ export default function HeroSection() {
             </div>
           </div>
 
-          {/* Right: subtle promo card (no big t-shirt photo) */}
+          {/* Right: slideshow card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -64,11 +95,26 @@ export default function HeroSection() {
             className="relative"
           >
             <div className="absolute -top-6 -left-6 w-56 h-56 rounded-3xl bg-premium-highlight blur-2xl opacity-50" />
-            <div className="relative bg-white rounded-3xl shadow-2xl p-10">
-              <div className="text-center">
-                <div className="text-6xl mb-3">👕</div>
-                <p className="text-gray-900 font-serif text-xl font-bold">Premium Collection</p>
-                <p className="text-sm text-gray-600 mt-1">Your style, your tone</p>
+            <div className="relative bg-white rounded-3xl shadow-2xl p-6 sm:p-10 overflow-hidden">
+              <div className="aspect-[4/5] w-full overflow-hidden rounded-2xl bg-premium-hover">
+                {images.length > 0 ? (
+                  <motion.div
+                    ref={trackRef}
+                    className="flex h-full"
+                    animate={{ x: `-${idx * 100}%` }}
+                    transition={{ duration: 0.8, ease: 'easeInOut' }}
+                  >
+                    {images.map((src, i) => (
+                      <div key={i} className="min-w-full h-full">
+                        <img src={src} alt="Product" className="w-full h-full object-cover select-none" />
+                      </div>
+                    ))}
+                  </motion.div>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <div className="text-6xl">👕</div>
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>

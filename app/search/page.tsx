@@ -40,7 +40,7 @@ function SearchContent() {
     try {
       setLoading(true);
       const response = await api.getProducts();
-      setProducts(response.ok ? response.data : []);
+      setProducts(response.data);
     } catch (error) {
       console.error('Failed to load products:', error);
     } finally {
@@ -172,7 +172,7 @@ function SearchContent() {
                   Try adjusting your search or browse all products
                 </p>
                 <Link
-                  href="/shop/limited"
+                  href="/shop"
                   className="inline-block px-6 py-3 bg-premium-badge text-white rounded-lg font-medium hover:bg-opacity-90 transition-colors"
                 >
                   Browse All Products
@@ -188,7 +188,7 @@ function SearchContent() {
                     transition={{ duration: 0.4, delay: index * 0.05 }}
                   >
                     <Link
-                      href={`/shop/${product.category}/${product.slug}`}
+                      href={`/${product.slug}`}
                       className="group block bg-premium-accent rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300"
                     >
                       <div className="aspect-square bg-premium-hover overflow-hidden">

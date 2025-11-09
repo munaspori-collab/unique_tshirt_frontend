@@ -62,7 +62,20 @@ export default function ProductClient({ slug }: { slug?: string }) {
             const res = await fetch(`${API_BASE_URL}/api/products/${encodeURIComponent(effectiveSlug)}`);
             if (res.ok) {
               const json = await res.json();
-              p = (json?.data || json?.product || (Array.isArray(json) ? json[0] : json)) ?? null;
+              const raw = (json?.data || json?.product || (Array.isArray(json) ? json[0] : json)) ?? null;
+              if (raw) {
+                const imgs = (raw.images ?? raw.image ?? raw.media ?? []);
+                const arr = Array.isArray(imgs) ? imgs : [imgs];
+                const normalizedImages = arr
+                  .map((it: any) => {
+                    const v = typeof it === 'string' ? it : (it?.url || it?.src || '');
+                    if (!v) return '';
+                    if (v.startsWith('http') || v.startsWith('data:')) return v;
+                    return `${API_BASE_URL}${v.startsWith('/') ? '' : '/'}${v}`;
+                  })
+                  .filter(Boolean);
+                p = { ...raw, images: normalizedImages } as any;
+              }
             }
           } catch {}
         }

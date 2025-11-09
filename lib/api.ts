@@ -1,18 +1,38 @@
 // API Configuration
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://unique-tshirt-backend.onrender.com';
 
+function normalizeImages(imgs: any): string[] {
+  if (!imgs) return [];
+  const arr = Array.isArray(imgs) ? imgs : [imgs];
+  return arr
+    .map((it: any) => {
+      const raw = typeof it === 'string' ? it : (it?.url || it?.src || '');
+      if (!raw) return '';
+      if (raw.startsWith('http') || raw.startsWith('data:')) return raw;
+      return `${API_BASE_URL}${raw.startsWith('/') ? '' : '/'}${raw}`;
+    })
+    .filter(Boolean);
+}
+
+function withNormalizedProductImages(p: any | null): any | null {
+  if (!p) return p;
+  const rawImages = p?.images ?? p?.image ?? p?.media ?? [];
+  const normalized = normalizeImages(rawImages);
+  return { ...p, images: normalized };
+}
+
 function normalizeProducts(json: any): any[] {
-  if (Array.isArray(json)) return json;
-  if (Array.isArray(json?.data)) return json.data;
-  if (Array.isArray(json?.products)) return json.products;
-  return [];
+  const list = Array.isArray(json)
+    ? json
+    : (Array.isArray(json?.data) ? json.data : (Array.isArray(json?.products) ? json.products : []));
+  return list.map((p: any) => withNormalizedProductImages(p));
 }
 
 function normalizeProduct(json: any): any | null {
-  if (Array.isArray(json)) return json[0] ?? null;
-  if (json?.data) return json.data;
-  if (json?.product) return json.product;
-  return json ?? null;
+  const p = Array.isArray(json)
+    ? (json[0] ?? null)
+    : (json?.data ?? json?.product ?? json ?? null);
+  return withNormalizedProductImages(p);
 }
 
 // API Client
@@ -56,7 +76,7 @@ export const api = {
         if (!res.ok) continue;
         const json = await res.json();
         const prod = normalizeProduct(json);
-        if (prod && prod.slug) return { data: prod };
+        if (prod && (prod.slug || prod._id)) return { data: prod };
       } catch {}
     }
     try {

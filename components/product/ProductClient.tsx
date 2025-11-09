@@ -7,6 +7,7 @@ import { ArrowLeft, Star, Heart, Share2, ShoppingBag } from 'lucide-react';
 import { api, handleApiError, API_BASE_URL } from '@/lib/api';
 import { openWhatsAppCheckout } from '@/lib/whatsapp';
 import { Size } from '@/types';
+import { useParams } from 'next/navigation';
 
 interface Product {
   _id: string;
@@ -24,7 +25,7 @@ interface Product {
   careInstructions?: string;
 }
 
-export default function ProductClient({ slug }: { slug: string }) {
+export default function ProductClient({ slug }: { slug?: string }) {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,20 +33,23 @@ export default function ProductClient({ slug }: { slug: string }) {
   const [selectedColor, setSelectedColor] = useState<string>('');
   const [selectedImage, setSelectedImage] = useState(0);
 
+  const params = useParams();
+  const effectiveSlug = (slug ?? (params && (params as any).slug ? String((params as any).slug) : undefined)) as string | undefined;
+
   useEffect(() => {
     async function fetchProduct() {
       try {
-        if (!slug || slug === 'undefined' || slug === 'null') {
-          setError('Invalid product');
+        if (!effectiveSlug) {
+          setError('Product not found');
           setProduct(null);
           return;
         }
-        const response = await api.getProductFlexible(slug);
+        const response = await api.getProductFlexible(effectiveSlug);
         let p = response.data as Product | null;
         // Fallback: try direct endpoint by slug
         if (!p) {
           try {
-            const res = await fetch(`${API_BASE_URL}/api/products/${encodeURIComponent(slug)}`);
+            const res = await fetch(`${API_BASE_URL}/api/products/${encodeURIComponent(effectiveSlug)}`);
             if (res.ok) {
               const json = await res.json();
               p = (json?.data || json?.product || (Array.isArray(json) ? json[0] : json)) ?? null;
@@ -67,7 +71,7 @@ export default function ProductClient({ slug }: { slug: string }) {
       }
     }
     fetchProduct();
-  }, [slug]);
+  }, [effectiveSlug]);
 
   const handleBuyNow = () => {
     if (!product) return;

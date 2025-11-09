@@ -32,6 +32,7 @@ export default function ProductPreview() {
         const seasonal = Array.isArray(seasonalRes.data) ? seasonalRes.data : [];
         const combined = [...limited, ...seasonal]
           .filter((p) => p?.images?.[0])
+          .filter((p) => !!p?.slug)
           .slice(0, 6);
         setProducts(combined);
       } catch (e) {

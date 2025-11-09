@@ -36,9 +36,15 @@ export default function ProductClient({ slug }: { slug: string }) {
     async function fetchProduct() {
       try {
         const response = await api.getProductFlexible(slug);
-        setProduct(response.data);
-        if (response.data.sizes?.length > 0) setSelectedSize(response.data.sizes[0]);
-        if (response.data.colors?.length > 0) setSelectedColor(response.data.colors[0]);
+        const p = response.data as Product | null;
+        if (!p) {
+          setProduct(null);
+          setError('Product not found');
+          return;
+        }
+        setProduct(p);
+        if (p.sizes?.length > 0) setSelectedSize(p.sizes[0]);
+        if (p.colors?.length > 0) setSelectedColor(p.colors[0]);
       } catch (err) {
         setError(handleApiError(err));
       } finally {

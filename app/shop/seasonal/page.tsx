@@ -84,7 +84,7 @@ export default function SeasonalPage() {
         {/* Products Grid */}
         {!loading && !error && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {products.map((product, index) => (
+            {products.filter((p)=>!!p.slug).map((product, index) => (
               <motion.div
                 key={product._id}
               initial={{ opacity: 0, y: 50 }}

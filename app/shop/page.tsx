@@ -28,7 +28,7 @@ export default function ShopPage() {
           api.getProducts("limited"),
           api.getProducts("seasonal"),
         ]);
-        const combined = [...limited.data, ...seasonal.data];
+        const combined = [...limited.data, ...seasonal.data].filter((p: any) => !!p?.slug);
         setProducts(combined);
       } catch (e) {
         setError(handleApiError(e));

@@ -37,7 +37,8 @@ export default function Header() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;
+      // Use relative path so it works under a GitHub Pages subpath too
+      window.location.href = `search?q=${encodeURIComponent(searchQuery)}`;
     }
   };
 

@@ -129,8 +129,13 @@ export default function LimitedEditionPage() {
                 </div>
                 {product.inStock ? (
                   <Link
-                    href={`/${product.slug}`}
-                    className="block w-full py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 hover:shadow-lg transition-all text-center"
+                    href={product.slug ? `/${product.slug}` : '#'}
+                    aria-disabled={!product.slug}
+                    className={`block w-full py-3 rounded-lg font-medium text-center transition-all ${
+                      product.slug
+                        ? 'bg-gray-900 text-white hover:bg-gray-800 hover:shadow-lg'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
                   >
                     View Details
                   </Link>

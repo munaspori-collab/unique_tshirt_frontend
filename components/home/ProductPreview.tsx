@@ -93,8 +93,13 @@ export default function ProductPreview() {
                     </div>
                   </div>
                   <Link
-                    href={`/${p.slug}`}
-                    className="block w-full py-3 bg-gray-900 text-white rounded-lg font-medium text-center hover:bg-gray-800 hover:shadow-lg transition-all"
+                    href={p.slug ? `/${p.slug}` : '#'}
+                    aria-disabled={!p.slug}
+                    className={`block w-full py-3 rounded-lg font-medium text-center transition-all ${
+                      p.slug
+                        ? 'bg-gray-900 text-white hover:bg-gray-800 hover:shadow-lg'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
                   >
                     View Details
                   </Link>

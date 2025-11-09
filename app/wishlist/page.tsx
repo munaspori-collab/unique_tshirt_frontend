@@ -45,9 +45,37 @@ export default function WishlistPage() {
         },
       });
       const data = await response.json();
-      if (data.ok) {
-        setWishlist(data.wishlist || []);
-      }
+
+      const normalizeImages = (imgs: any): string[] => {
+        if (!imgs) return [];
+        const arr = Array.isArray(imgs) ? imgs : [imgs];
+        return arr.map((it: any) => {
+          const raw = typeof it === 'string' ? it : (it?.url || it?.src || '');
+          if (!raw) return '';
+          if (raw.startsWith('http') || raw.startsWith('data:')) return raw;
+          return `${process.env.NEXT_PUBLIC_API_URL}${raw.startsWith('/') ? '' : '/'}${raw}`;
+        }).filter(Boolean);
+      };
+
+      const parseList = (json: any): Product[] => {
+        const list = Array.isArray(json) ? json : (json?.wishlist || json?.items || json?.data || []);
+        return list.map((it: any) => {
+          const p = it?.product ? it.product : it;
+          const cat = p?.category || it?.category || 'seasonal';
+          return {
+            _id: String(p?._id || p?.id || it?.productId || it?._id || ''),
+            name: p?.name || 'Product',
+            slug: p?.slug || it?.slug || '',
+            price: Number(p?.price ?? 0),
+            images: normalizeImages(p?.images),
+            inStock: Boolean(p?.inStock ?? true),
+            category: (cat as any),
+          } as Product;
+        });
+      };
+
+      const list = parseList(data);
+      setWishlist(list);
     } catch (error) {
       console.error('Failed to load wishlist:', error);
     } finally {
@@ -236,25 +264,23 @@ export default function WishlistPage() {
                 </Link>
                   <div className="p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-bold text-white ${
-                          product.category === 'limited' ? 'bg-yellow-500' : 'bg-green-500'
-                        }`}
-                      >
-                        {product.category === 'limited' ? 'LIMITED' : 'SEASONAL'}
+                    <span className={`px-2 py-1 rounded-full text-xs font-bold text-white ${
+                        product.category === 'limited' ? 'bg-yellow-500' : 'bg-green-500'
+                      }`}>
+                      {product.category === 'limited' ? 'LIMITED' : 'SEASONAL'}
+                    </span>
+                    {!product.inStock && (
+                      <span className="px-2 py-1 bg-red-500 text-white rounded-full text-xs font-bold">
+                        OUT OF STOCK
                       </span>
-                      {!product.inStock && (
-                        <span className="px-2 py-1 bg-red-500 text-white rounded-full text-xs font-bold">
-                          OUT OF STOCK
-                        </span>
-                      )}
-                    </div>
-                    <Link href={`/shop/${product.category}/${product.slug}`}>
-                      <h3 className="font-serif font-semibold text-lg text-gray-900 mb-2 hover:text-premium-badge transition-colors">
-                        {product.name}
-                      </h3>
-                    </Link>
-                    <p className="text-xl font-bold text-gray-900 mb-4">₹{product.price}</p>
+                    )}
+                  </div>
+                  <Link href={`/product?slug=${encodeURIComponent(product.slug)}`}>
+                    <h3 className="font-serif font-semibold text-lg text-gray-900 mb-2 hover:text-premium-badge transition-colors">
+                      {product.name}
+                    </h3>
+                  </Link>
+                  <p className="text-xl font-bold text-gray-900 mb-4">{product.price ? `₹${product.price}` : '—'}</p>
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleBuyNow(product)}

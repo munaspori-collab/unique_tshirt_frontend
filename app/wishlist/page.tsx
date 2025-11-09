@@ -58,17 +58,34 @@ export default function WishlistPage() {
       };
 
       const parseList = (json: any): Product[] => {
-        const list = Array.isArray(json) ? json : (json?.wishlist || json?.items || json?.data || []);
-        return list.map((it: any) => {
-          const p = it?.product ? it.product : it;
+        // Try common shapes and nested containers
+        const candidates: any[] = [];
+        if (Array.isArray(json)) candidates.push(json);
+        if (Array.isArray(json?.wishlist)) candidates.push(json.wishlist);
+        if (Array.isArray(json?.items)) candidates.push(json.items);
+        if (Array.isArray(json?.data)) candidates.push(json.data);
+        if (Array.isArray(json?.data?.wishlist)) candidates.push(json.data.wishlist);
+        if (Array.isArray(json?.data?.items)) candidates.push(json.data.items);
+        if (Array.isArray(json?.data?.data)) candidates.push(json.data.data);
+        const listRaw: any[] = candidates.find((a) => Array.isArray(a)) || [];
+
+        return listRaw.map((it: any) => {
+          // Support { product: {...} } or product nested under different keys
+          const p = it?.product || it?.productDetails || it?.product_data || it;
+          const rawImages = p?.images ?? p?.image ?? p?.media ?? [];
           const cat = p?.category || it?.category || 'seasonal';
+          const slug = p?.slug || it?.slug || p?.seoSlug || '';
+          const name = p?.name || p?.title || 'Product';
+          const priceNum = Number(p?.price ?? p?.amount ?? p?.mrp ?? 0) || 0;
+          const inStock = Boolean((p?.inStock ?? p?.stock ?? true) !== false);
+
           return {
-            _id: String(p?._id || p?.id || it?.productId || it?._id || ''),
-            name: p?.name || 'Product',
-            slug: p?.slug || it?.slug || '',
-            price: Number(p?.price ?? 0),
-            images: normalizeImages(p?.images),
-            inStock: Boolean(p?.inStock ?? true),
+            _id: String(p?._id || p?.id || it?.productId || it?._id || slug || name),
+            name,
+            slug,
+            price: priceNum,
+            images: normalizeImages(rawImages),
+            inStock,
             category: (cat as any),
           } as Product;
         });

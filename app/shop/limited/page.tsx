@@ -129,7 +129,7 @@ export default function LimitedEditionPage() {
                 </div>
                 {product.inStock ? (
                   <Link
-                    href={product.slug ? `/${product.slug}` : '#'}
+                    href={product.slug ? `/product?slug=${encodeURIComponent(product.slug)}` : '#'}
                     aria-disabled={!product.slug}
                     className={`block w-full py-3 rounded-lg font-medium text-center transition-all ${
                       product.slug

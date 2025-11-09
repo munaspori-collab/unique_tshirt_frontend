@@ -188,7 +188,7 @@ function SearchContent() {
                     transition={{ duration: 0.4, delay: index * 0.05 }}
                   >
                     <Link
-                      href={`/${product.slug}`}
+                      href={`/product?slug=${encodeURIComponent(product.slug)}`}
                       className="group block bg-premium-accent rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300"
                     >
                       <div className="aspect-square bg-premium-hover overflow-hidden">

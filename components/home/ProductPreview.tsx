@@ -93,7 +93,7 @@ export default function ProductPreview() {
                     </div>
                   </div>
                   <Link
-                    href={p.slug ? `/${p.slug}` : '#'}
+                    href={p.slug ? `/product?slug=${encodeURIComponent(p.slug)}` : '#'}
                     aria-disabled={!p.slug}
                     className={`block w-full py-3 rounded-lg font-medium text-center transition-all ${
                       p.slug

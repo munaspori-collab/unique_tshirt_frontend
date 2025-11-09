@@ -20,6 +20,7 @@ export default function Header() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const pathname = usePathname();
   const { user, login, logout, loading, isAdmin } = useAuth();
+  const isSearchPage = pathname?.startsWith('/search');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -86,19 +87,21 @@ export default function Header() {
           </nav>
 
           {/* Search Bar (Desktop) */}
-          <form onSubmit={handleSearch} className="hidden md:flex items-center flex-1 max-w-md mx-8">
-            <div className="relative w-full">
-              <input
-                type="text"
-                placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2 pl-10 bg-premium-hover rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-premium-badge transition-all"
-                aria-label="Search products"
-              />
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-            </div>
-          </form>
+          {!isSearchPage && (
+            <form onSubmit={handleSearch} className="hidden md:flex items-center flex-1 max-w-md mx-8">
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-4 py-2 pl-10 bg-premium-hover rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-premium-badge transition-all"
+                  aria-label="Search products"
+                />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+              </div>
+            </form>
+          )}
 
           {/* Icons */}
           <div className="flex items-center space-x-4">
@@ -242,19 +245,21 @@ export default function Header() {
           >
             <div className="flex flex-col h-full pt-20 pb-6 px-4">
               {/* Mobile Search */}
-              <form onSubmit={handleSearch} className="mb-6">
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full px-4 py-2 pl-10 bg-premium-hover rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-premium-badge"
-                    aria-label="Search products"
-                  />
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                </div>
-              </form>
+              {!isSearchPage && (
+                <form onSubmit={handleSearch} className="mb-6">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full px-4 py-2 pl-10 bg-premium-hover rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-premium-badge"
+                      aria-label="Search products"
+                    />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                  </div>
+                </form>
+              )}
 
               {/* Mobile Navigation */}
               <nav className="flex-1" aria-label="Mobile navigation">

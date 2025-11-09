@@ -32,6 +32,8 @@ export default function ProductClient({ slug }: { slug?: string }) {
   const [error, setError] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [selectedColor, setSelectedColor] = useState<string>('');
+  const defaultSizes = ['S','M','L','XL','XXL'];
+  const defaultColors = ['Black','White','Blue','Red'];
   const [selectedImage, setSelectedImage] = useState(0);
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
   const [ratingAvg, setRatingAvg] = useState(0);
@@ -67,8 +69,10 @@ export default function ProductClient({ slug }: { slug?: string }) {
           return;
         }
         setProduct(p);
-        if (p.sizes?.length > 0) setSelectedSize(p.sizes[0]);
-        if (p.colors?.length > 0) setSelectedColor(p.colors[0]);
+        const sizes = (p.sizes && p.sizes.length > 0) ? p.sizes : defaultSizes;
+        const colors = (p.colors && p.colors.length > 0) ? p.colors : defaultColors;
+        setSelectedSize(sizes[0]);
+        setSelectedColor(colors[0]);
         if (p?._id) {
           const summary = getRatingSummary(p._id);
           setRatingAvg(summary.average);
@@ -214,11 +218,10 @@ export default function ProductClient({ slug }: { slug?: string }) {
 
             <p className="text-gray-700 leading-relaxed">{product.description}</p>
 
-            {product.sizes && product.sizes.length > 0 && (
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Select Size</h3>
-                <div className="flex flex-wrap gap-2">
-                  {product.sizes.map((size) => (
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">Select Size</h3>
+              <div className="flex flex-wrap gap-2">
+                {(product.sizes?.length ? product.sizes : defaultSizes).map((size) => (
                     <button
                       key={size}
                       onClick={() => setSelectedSize(size)}
@@ -233,13 +236,11 @@ export default function ProductClient({ slug }: { slug?: string }) {
                   ))}
                 </div>
               </div>
-            )}
 
-            {product.colors && product.colors.length > 0 && (
               <div>
                 <h3 className="text-sm font-semibold text-gray-900 mb-3">Select Color</h3>
                 <div className="flex flex-wrap gap-2">
-                  {product.colors.map((color) => (
+                  {(product.colors?.length ? product.colors : defaultColors).map((color) => (
                     <button
                       key={color}
                       onClick={() => setSelectedColor(color)}
@@ -254,7 +255,6 @@ export default function ProductClient({ slug }: { slug?: string }) {
                   ))}
                 </div>
               </div>
-            )}
 
             <div className="flex gap-4">
               <button

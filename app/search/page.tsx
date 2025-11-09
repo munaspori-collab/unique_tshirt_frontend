@@ -106,12 +106,22 @@ function SearchContent() {
                 autoFocus
               />
               <SearchIcon className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-400" />
-              <button
-                type="submit"
-                className="absolute right-3 top-1/2 -translate-y-1/2 px-6 py-2 bg-premium-badge text-white rounded-lg font-medium hover:bg-opacity-90 transition-colors"
-              >
-                Search
-              </button>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-2">
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-premium-badge text-white rounded-lg font-medium hover:bg-opacity-90 transition-colors"
+                >
+                  Search
+                </button>
+                <a
+                  href={`https://www.google.com/search?q=${encodeURIComponent(searchQuery || '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+                >
+                  Google
+                </a>
+              </div>
             </div>
           </form>
 
@@ -172,14 +182,24 @@ function SearchContent() {
                   No products found
                 </h2>
                 <p className="text-gray-700 mb-6">
-                  Try adjusting your search or browse all products
+                  Try adjusting your search, browse all products, or search on Google.
                 </p>
-                <Link
-                  href="/shop"
-                  className="inline-block px-6 py-3 bg-premium-badge text-white rounded-lg font-medium hover:bg-opacity-90 transition-colors"
-                >
-                  Browse All Products
-                </Link>
+                <div className="flex gap-3 justify-center">
+                  <Link
+                    href="/shop"
+                    className="inline-block px-6 py-3 bg-premium-badge text-white rounded-lg font-medium hover:bg-opacity-90 transition-colors"
+                  >
+                    Browse All Products
+                  </Link>
+                  <a
+                    href={`https://www.google.com/search?q=${encodeURIComponent(searchQuery || '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block px-6 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+                  >
+                    Search on Google
+                  </a>
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

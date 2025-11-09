@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Edit, Trash2, X, Image as ImageIcon, Package, DollarSign, Tag } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, X, Image as ImageIcon, Package, DollarSign, Tag, Heart, Search as SearchIcon } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
+import { API_BASE_URL } from '@/lib/api';
 
 interface Product {
   _id: string;
@@ -22,6 +23,13 @@ interface Product {
   inStock: boolean;
 }
 
+interface AdminWishlistItem {
+  _id: string;
+  user: { id?: string; _id?: string; name?: string; email?: string; image?: string };
+  product: { _id: string; name: string; images?: string[]; slug?: string; category?: string };
+  createdAt?: string;
+}
+
 export default function AdminPage() {
   const { user, isAdmin, loading } = useAuth();
   const router = useRouter();
@@ -30,6 +38,11 @@ export default function AdminPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  // Wishlist Insights
+  const [wishlistItems, setWishlistItems] = useState<AdminWishlistItem[]>([]);
+  const [loadingWishlist, setLoadingWishlist] = useState(true);
+  const [wishlistQuery, setWishlistQuery] = useState('');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -56,6 +69,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (isAdmin) {
       loadProducts();
+      loadWishlistInsights();
     }
   }, [isAdmin]);
 
@@ -88,6 +102,53 @@ export default function AdminPage() {
       setProducts([]);
     } finally {
       setLoadingProducts(false);
+    }
+  };
+
+  const loadWishlistInsights = async () => {
+    try {
+      setLoadingWishlist(true);
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      const headers: Record<string,string> = token ? { Authorization: `Bearer ${token}` } : {};
+      const attempts = [
+        `${API_BASE_URL}/api/admin/wishlist`,
+        `${API_BASE_URL}/api/wishlist/all`,
+        `${API_BASE_URL}/api/wishlist?all=true`,
+      ];
+      for (const url of attempts) {
+        try {
+          const res = await fetch(url, { headers });
+          if (!res.ok) continue;
+          const json = await res.json();
+          const list = Array.isArray(json)
+            ? json
+            : (json.wishlist || json.items || json.data || []);
+          const normalized: AdminWishlistItem[] = list.map((it: any) => ({
+            _id: String(it._id || it.id || `${(it.user && (it.user._id || it.user.id || it.user.email)) || 'u'}_${(it.product && (it.product._id || it.product.id || it.product.name)) || 'p'}`),
+            user: {
+              id: it.user?._id || it.user?.id,
+              name: it.user?.name || it.user?.fullName || it.user?.email?.split('@')[0] || 'User',
+              email: it.user?.email,
+              image: it.user?.image,
+            },
+            product: {
+              _id: it.product?._id || it.product?.id,
+              name: it.product?.name || 'Product',
+              images: it.product?.images || [],
+              slug: it.product?.slug,
+              category: it.product?.category,
+            },
+            createdAt: it.createdAt || it.addedAt || undefined,
+          }));
+          setWishlistItems(normalized);
+          break;
+        } catch {}
+      }
+    } catch (e) {
+      console.error('Failed to load wishlist insights', e);
+      setWishlistItems([]);
+    } finally {
+      setLoadingWishlist(false);
     }
   };
 
@@ -514,6 +575,69 @@ export default function AdminPage() {
             </form>
           </div>
         )}
+
+        {/* Wishlist Insights */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-serif font-bold text-gray-900 flex items-center gap-2">
+              <Heart className="w-6 h-6 text-red-500" /> Wishlist Insights
+            </h2>
+            <div className="relative max-w-xs w-full">
+              <input
+                type="text"
+                value={wishlistQuery}
+                onChange={(e) => setWishlistQuery(e.target.value)}
+                placeholder="Filter by user or product..."
+                className="w-full pl-10 pr-4 py-2 bg-premium-hover rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+            </div>
+          </div>
+
+          {loadingWishlist ? (
+            <div className="text-center py-10">
+              <div className="h-10 w-10 border-4 border-purple-300 border-t-purple-600 rounded-full animate-spin mx-auto" />
+              <p className="text-gray-600 mt-3">Loading wishlist...</p>
+            </div>
+          ) : wishlistItems.length === 0 ? (
+            <div className="text-center py-10">
+              <Heart className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-600">No wishlist items yet</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {wishlistItems
+                .filter((w) => {
+                  const q = wishlistQuery.toLowerCase();
+                  if (!q) return true;
+                  return (
+                    (w.user?.name || '').toLowerCase().includes(q) ||
+                    (w.user?.email || '').toLowerCase().includes(q) ||
+                    (w.product?.name || '').toLowerCase().includes(q)
+                  );
+                })
+                .map((w) => (
+                  <div key={w._id} className="flex items-center gap-3 p-3 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-200">
+                    <img
+                      src={w.product.images?.[0] || '/favicon.ico'}
+                      alt={w.product.name}
+                      className="w-14 h-14 object-cover rounded-lg border"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{w.product.name}</p>
+                      <p className="text-xs text-gray-600 truncate">{w.user.name}{w.user.email ? ` • ${w.user.email}` : ''}</p>
+                      {w.createdAt && (
+                        <p className="text-[11px] text-gray-500">{new Date(w.createdAt).toLocaleString()}</p>
+                      )}
+                    </div>
+                    {w.product.slug && (
+                      <Link href={`/product?slug=${encodeURIComponent(w.product.slug)}`} className="px-3 py-1 text-xs bg-gray-900 text-white rounded-lg hover:bg-gray-800">View</Link>
+                    )}
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
 
         {/* Products List */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">

@@ -110,10 +110,11 @@ export default function AdminPage() {
       setLoadingWishlist(true);
       const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
       const headers: Record<string,string> = token ? { Authorization: `Bearer ${token}` } : {};
+      // Prefer the only confirmed-working endpoint first to avoid 404 noise in logs
       const attempts = [
+        `${API_BASE_URL}/api/wishlist?all=true`,
         `${API_BASE_URL}/api/admin/wishlist`,
         `${API_BASE_URL}/api/wishlist/all`,
-        `${API_BASE_URL}/api/wishlist?all=true`,
       ];
       for (const url of attempts) {
         try {

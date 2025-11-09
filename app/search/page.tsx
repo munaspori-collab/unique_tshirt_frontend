@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Search as SearchIcon } from 'lucide-react';
@@ -21,20 +21,38 @@ interface Product {
 function SearchContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
+  const GOOGLE_CX = process.env.NEXT_PUBLIC_GOOGLE_CX;
+  const useGoogleCSE = useMemo(() => typeof window !== 'undefined' && !!GOOGLE_CX, [GOOGLE_CX]);
   
   const [searchQuery, setSearchQuery] = useState(query);
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [cseLoaded, setCseLoaded] = useState(false);
+
+  // Load Google Programmable Search (CSE) if configured
+  useEffect(() => {
+    if (!useGoogleCSE || cseLoaded) return;
+    const scriptId = 'google-cse-script';
+    if (document.getElementById(scriptId)) { setCseLoaded(true); return; }
+    const s = document.createElement('script');
+    s.id = scriptId;
+    s.async = true;
+    s.src = `https://cse.google.com/cse.js?cx=${encodeURIComponent(GOOGLE_CX as string)}`;
+    s.onload = () => setCseLoaded(true);
+    document.body.appendChild(s);
+  }, [useGoogleCSE, GOOGLE_CX, cseLoaded]);
 
   useEffect(() => {
+    if (useGoogleCSE) return; // Skip local load when using CSE
     loadProducts();
-  }, []);
+  }, [useGoogleCSE]);
 
   useEffect(() => {
+    if (useGoogleCSE) return;
     filterProducts();
-  }, [searchQuery, products, selectedCategory]);
+  }, [searchQuery, products, selectedCategory, useGoogleCSE]);
 
   const loadProducts = async () => {
     try {
@@ -75,7 +93,23 @@ function SearchContent() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    filterProducts();
+    if (!useGoogleCSE) {
+      filterProducts();
+    } else {
+      // When using CSE, submitting the form will update the URL's q param; the CSE widget reads it automatically
+      const url = new URL(window.location.href);
+      url.searchParams.set('q', searchQuery || '');
+      window.history.replaceState({}, '', url.toString());
+      // Trigger Google CSE search by dispatching input event
+      const boxes = document.querySelectorAll('input.gsc-input');
+      if (boxes && boxes[0]) {
+        const el = boxes[0] as HTMLInputElement;
+        el.value = searchQuery;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        const btn = document.querySelector('button.gsc-search-button, input.gsc-search-button');
+        (btn as HTMLElement)?.click?.();
+      }
+    }
   };
 
   return (
@@ -113,14 +147,16 @@ function SearchContent() {
                 >
                   Search
                 </button>
-                <a
-                  href={`https://www.google.com/search?q=${encodeURIComponent(searchQuery || '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-4 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
-                >
-                  Google
-                </a>
+                {!useGoogleCSE && (
+                  <a
+                    href={`https://www.google.com/search?q=${encodeURIComponent(searchQuery || '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+                  >
+                    Google
+                  </a>
+                )}
               </div>
             </div>
           </form>
@@ -160,8 +196,17 @@ function SearchContent() {
           </div>
         </div>
 
-        {/* Results */}
-        {loading ? (
+        {/* Google CSE Results */}
+        {useGoogleCSE ? (
+          <div className="bg-white rounded-2xl p-4 border border-premium-accent">
+            {/* The CSE widgets read the `q` URL param automatically */}
+            <div className="gcse-searchbox-only" data-queryParameterName="q"></div>
+            <div className="gcse-searchresults-only" data-queryParameterName="q"></div>
+          </div>
+        ) : (
+          <>
+          {/* Local Results */}
+          {loading ? (
           <div className="text-center py-20">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
             <p className="mt-4 text-gray-700">Searching...</p>
@@ -253,6 +298,8 @@ function SearchContent() {
               </div>
             )}
           </>
+        )}
+        </>
         )}
       </div>
     </main>

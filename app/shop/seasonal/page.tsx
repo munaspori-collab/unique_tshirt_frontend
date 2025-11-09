@@ -83,14 +83,14 @@ export default function SeasonalPage() {
 
         {/* Products Grid */}
         {!loading && !error && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
             {products.filter((p)=>!!p.slug).map((product, index) => (
               <motion.div
                 key={product._id}
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-premium-accent rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all group"
+              className="bg-premium-accent rounded-xl sm:rounded-2xl overflow-hidden shadow hover:shadow-lg transition-all group"
             >
                 {/* Product Image */}
                 <Link href={product.slug ? `/product?slug=${encodeURIComponent(product.slug)}` : '#'} aria-disabled={!product.slug}>
@@ -113,12 +113,12 @@ export default function SeasonalPage() {
                 </Link>
 
               {/* Product Info */}
-              <div className="p-6">
-                <h3 className="text-lg font-serif font-bold text-gray-900 mb-2">
+              <div className="p-3 sm:p-6">
+                <h3 className="text-base sm:text-lg font-serif font-bold text-gray-900 mb-1 sm:mb-2">
                   {product.name}
                 </h3>
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-xl font-bold text-gray-900">₹{product.price}</span>
+                  <span className="text-lg sm:text-xl font-bold text-gray-900">₹{product.price}</span>
                   <div className="flex items-center text-yellow-600">
                     <Star className="w-4 h-4 fill-current" />
                     <span className="ml-1 text-sm font-medium">4.8</span>
@@ -127,7 +127,7 @@ export default function SeasonalPage() {
                 <Link
                   href={product.slug ? `/product?slug=${encodeURIComponent(product.slug)}` : '#'}
                   aria-disabled={!product.slug}
-                  className={`block w-full py-3 rounded-lg font-medium text-center transition-all ${
+                  className={`block w-full py-2 sm:py-3 rounded-lg font-medium text-center transition-all ${
                     product.slug
                       ? 'bg-gray-900 text-white hover:bg-gray-800 hover:shadow-lg'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'

@@ -52,7 +52,7 @@ export default function ProductPreview() {
         </div>
 
         {loading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="h-64 rounded-2xl bg-premium-accent animate-pulse" />
             ))}
@@ -66,7 +66,7 @@ export default function ProductPreview() {
         )}
 
         {!loading && !error && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
             {products.map((p, idx) => (
               <motion.div
                 key={p._id}

@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Star, Heart, Share2, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, Star, Heart, Share2, ShoppingBag, X } from 'lucide-react';
 import { api, handleApiError, API_BASE_URL } from '@/lib/api';
 import { openWhatsAppCheckout } from '@/lib/whatsapp';
+import { getRatingSummary, getMyRating, setMyRating, UserRating } from '@/lib/ratings';
 import { Size } from '@/types';
 import { useParams } from 'next/navigation';
 
@@ -32,6 +33,10 @@ export default function ProductClient({ slug }: { slug?: string }) {
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [selectedColor, setSelectedColor] = useState<string>('');
   const [selectedImage, setSelectedImage] = useState(0);
+  const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
+  const [ratingAvg, setRatingAvg] = useState(0);
+  const [ratingCount, setRatingCount] = useState(0);
+  const [myRating, setMyRatingState] = useState<UserRating | undefined>(undefined);
 
   const params = useParams();
   const effectiveSlug = (slug ?? (params && (params as any).slug ? String((params as any).slug) : undefined)) as string | undefined;
@@ -64,6 +69,12 @@ export default function ProductClient({ slug }: { slug?: string }) {
         setProduct(p);
         if (p.sizes?.length > 0) setSelectedSize(p.sizes[0]);
         if (p.colors?.length > 0) setSelectedColor(p.colors[0]);
+        if (p?._id) {
+          const summary = getRatingSummary(p._id);
+          setRatingAvg(summary.average);
+          setRatingCount(summary.count);
+          setMyRatingState(getMyRating(p._id));
+        }
       } catch (err) {
         setError(handleApiError(err));
       } finally {
@@ -75,12 +86,16 @@ export default function ProductClient({ slug }: { slug?: string }) {
 
   const handleBuyNow = () => {
     if (!product) return;
+    const productUrl = typeof window !== 'undefined' && product.slug ? `${window.location.origin}/product?slug=${encodeURIComponent(product.slug)}` : undefined;
+    const imageUrl = product.images?.[selectedImage] || product.images?.[0];
     openWhatsAppCheckout({
       productName: product.name,
       productId: product._id,
       size: selectedSize as Size,
       color: selectedColor,
       price: product.price,
+      productUrl,
+      imageUrl,
     });
   };
 
@@ -131,13 +146,14 @@ export default function ProductClient({ slug }: { slug?: string }) {
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="bg-premium-accent rounded-2xl overflow-hidden mb-4 aspect-square"
+              className="bg-premium-accent rounded-2xl overflow-hidden mb-4 aspect-square cursor-zoom-in"
+              onClick={() => setIsImagePreviewOpen(true)}
             >
               {product.images && product.images[selectedImage] ? (
                 <img
                   src={product.images[selectedImage]}
                   alt={product.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain p-4 bg-white"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-9xl">
@@ -156,7 +172,7 @@ export default function ProductClient({ slug }: { slug?: string }) {
                       selectedImage === index ? 'border-premium-badge' : 'border-transparent'
                     }`}
                   >
-                    <img src={image} alt={`${product.name} ${index + 1}`} className="w-full h-full object-cover" />
+                    <img src={image} alt={`${product.name} ${index + 1}`} className="w-full h-full object-contain p-1 bg-white" />
                   </button>
                 ))}
               </div>
@@ -184,8 +200,14 @@ export default function ProductClient({ slug }: { slug?: string }) {
                 <span className="text-3xl font-bold text-gray-900">₹{product.price}</span>
                 <div className="flex items-center text-yellow-600">
                   <Star className="w-5 h-5 fill-current" />
-                  <span className="ml-1 font-medium">4.9</span>
-                  <span className="ml-1 text-gray-600">(reviews)</span>
+                  {ratingCount > 0 ? (
+                    <>
+                      <span className="ml-1 font-medium">{ratingAvg.toFixed(1)}</span>
+                      <span className="ml-1 text-gray-600">({ratingCount} rating{ratingCount>1?'s':''})</span>
+                    </>
+                  ) : (
+                    <span className="ml-1 text-gray-600">No ratings yet</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -256,6 +278,30 @@ export default function ProductClient({ slug }: { slug?: string }) {
             </div>
 
             <div className="border-t border-premium-accent pt-6 space-y-4">
+              {/* Ratings */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">Rate this product</h3>
+                <div className="flex items-center gap-1">
+                  {[1,2,3,4,5].map((n) => (
+                    <button
+                      key={n}
+                      aria-label={`Rate ${n} star${n>1?'s':''}`}
+                      onClick={() => {
+                        if (!product?._id) return;
+                        setMyRating(product._id, n as UserRating);
+                        const summary = getRatingSummary(product._id);
+                        setRatingAvg(summary.average);
+                        setRatingCount(summary.count);
+                        setMyRatingState(n as UserRating);
+                      }}
+                      className="p-1"
+                    >
+                      <Star className={`w-6 h-6 ${myRating && n <= myRating ? 'text-yellow-500 fill-yellow-500' : 'text-gray-400'}`} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {product.fabricDetails && (
                 <div>
                   <h3 className="text-sm font-semibold text-gray-900 mb-2">Fabric Details</h3>
@@ -272,6 +318,35 @@ export default function ProductClient({ slug }: { slug?: string }) {
           </motion.div>
         </div>
       </div>
+
+      {/* Half-screen image preview */}
+      {isImagePreviewOpen && (
+        <div
+          className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setIsImagePreviewOpen(false)}
+        >
+          <div className="relative w-full max-w-4xl" onClick={(e) => e.stopPropagation()}>
+            <button
+              aria-label="Close image preview"
+              className="absolute -top-10 right-0 text-white"
+              onClick={() => setIsImagePreviewOpen(false)}
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <div className="h-[50vh] bg-white rounded-xl overflow-hidden">
+              {product?.images?.[selectedImage] ? (
+                <img
+                  src={product.images[selectedImage]}
+                  alt={product.name}
+                  className="w-full h-full object-contain"
+                />
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

@@ -70,17 +70,19 @@ export default function ShopPage() {
                 transition={{ duration: 0.5, delay: index * 0.05 }}
                 className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all group"
               >
-                <div className="aspect-square bg-premium-hover flex items-center justify-center relative overflow-hidden">
-                  {product.images && product.images[0] ? (
-                    <img
-                      src={product.images[0]}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
-                  ) : (
-                    <div className="text-6xl">👕</div>
-                  )}
-                </div>
+                <Link href={product.slug ? `/product?slug=${encodeURIComponent(product.slug)}` : '#'} aria-disabled={!product.slug}>
+                  <div className="aspect-square bg-premium-hover flex items-center justify-center relative overflow-hidden cursor-pointer">
+                    {product.images && product.images[0] ? (
+                      <img
+                        src={product.images[0]}
+                        alt={product.name}
+                        className="w-full h-full object-cover bg-white transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="text-6xl">👕</div>
+                    )}
+                  </div>
+                </Link>
                 <div className="p-6">
                   <h3 className="text-xl font-serif font-bold text-gray-900 mb-2">{product.name}</h3>
                   <div className="flex items-center justify-between mb-4">

@@ -76,13 +76,15 @@ export default function ProductPreview() {
                 transition={{ duration: 0.4, delay: idx * 0.06 }}
                 className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all group"
               >
-                <div className="aspect-[4/3] bg-premium-hover relative overflow-hidden">
-                  <img
-                    src={p.images[0]}
-                    alt={p.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                  />
-                </div>
+                <Link href={p.slug ? `/product?slug=${encodeURIComponent(p.slug)}` : '#'} aria-disabled={!p.slug}>
+                  <div className="aspect-[4/3] bg-premium-hover relative overflow-hidden cursor-pointer">
+                    <img
+                      src={p.images[0]}
+                      alt={p.name}
+                      className="w-full h-full object-cover transition-transform duration-300 bg-white"
+                    />
+                  </div>
+                </Link>
                 <div className="p-6">
                   <h3 className="text-lg font-serif font-bold text-gray-900 mb-1">{p.name}</h3>
                   <div className="flex items-center justify-between mb-4">

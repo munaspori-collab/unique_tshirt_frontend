@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Heart, ShoppingBag, Trash2, X } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
-import { openWhatsAppCheckout } from '@/lib/whatsapp';
+import { openWhatsAppCheckout, openWhatsAppBulkCheckout } from '@/lib/whatsapp';
 import { Size } from '@/types';
 
 interface Product {
@@ -23,6 +23,7 @@ export default function WishlistPage() {
   const { user, loading: authLoading } = useAuth();
   const [wishlist, setWishlist] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!authLoading) {
@@ -71,13 +72,45 @@ export default function WishlistPage() {
   };
 
   const handleBuyNow = (product: Product) => {
+    const productUrl = typeof window !== 'undefined' && product.slug ? `${window.location.origin}/product?slug=${encodeURIComponent(product.slug)}` : undefined;
+    const imageUrl = product.images?.[0];
     openWhatsAppCheckout({
       productName: product.name,
       productId: product._id,
-      size: product.sizes?.[0] as Size || 'M' as Size,
+      size: (product.sizes?.[0] as Size) || ('M' as Size),
       color: product.colors?.[0] || 'Black',
       price: product.price,
+      productUrl,
+      imageUrl,
     });
+  };
+
+  const toggleSelected = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    setSelected(new Set(wishlist.map(w => w._id)));
+  };
+
+  const clearSelection = () => setSelected(new Set());
+
+  const handleBuySelected = () => {
+    const items = wishlist.filter(w => selected.has(w._id)).map((p) => ({
+      productName: p.name,
+      productId: p._id,
+      size: (p.sizes?.[0] as Size) || ('M' as Size),
+      color: p.colors?.[0] || 'Black',
+      price: p.price,
+      quantity: 1,
+      productUrl: typeof window !== 'undefined' && p.slug ? `${window.location.origin}/product?slug=${encodeURIComponent(p.slug)}` : undefined,
+      imageUrl: p.images?.[0],
+    }));
+    if (items.length > 0) openWhatsAppBulkCheckout(items);
   };
 
   if (authLoading || loading) {
@@ -153,72 +186,91 @@ export default function WishlistPage() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {wishlist.map((product) => (
-              <div
-                key={product._id}
-                className="bg-premium-accent rounded-2xl overflow-hidden hover:shadow-xl transition-all"
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <button onClick={selectAll} className="px-3 py-2 bg-premium-accent rounded-lg text-sm hover:bg-premium-badge">Select All</button>
+                <button onClick={clearSelection} className="px-3 py-2 bg-premium-accent rounded-lg text-sm hover:bg-premium-badge">Clear</button>
+              </div>
+              <button
+                onClick={handleBuySelected}
+                disabled={selected.size === 0}
+                className={`px-4 py-2 rounded-lg font-medium ${selected.size > 0 ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
               >
-                <Link href={`/shop/${product.category}/${product.slug}`}>
-                  <div className="aspect-square bg-premium-hover overflow-hidden">
-                    {product.images && product.images[0] ? (
-                      <img
-                        src={product.images[0]}
-                        alt={product.name}
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-6xl">
-                        {product.category === 'limited' ? '✨' : '🍂'}
-                      </div>
-                    )}
-                  </div>
-                </Link>
-                <div className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-bold text-white ${
-                        product.category === 'limited' ? 'bg-yellow-500' : 'bg-green-500'
-                      }`}
-                    >
-                      {product.category === 'limited' ? 'LIMITED' : 'SEASONAL'}
-                    </span>
-                    {!product.inStock && (
-                      <span className="px-2 py-1 bg-red-500 text-white rounded-full text-xs font-bold">
-                        OUT OF STOCK
-                      </span>
-                    )}
+                Buy Selected ({selected.size})
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {wishlist.map((product) => (
+                <div
+                  key={product._id}
+                  className="bg-premium-accent rounded-2xl overflow-hidden hover:shadow-xl transition-all relative"
+                >
+                  <div className="absolute top-3 left-3 z-10">
+                    <input type="checkbox" checked={selected.has(product._id)} onChange={() => toggleSelected(product._id)} className="h-5 w-5" />
                   </div>
                   <Link href={`/shop/${product.category}/${product.slug}`}>
-                    <h3 className="font-serif font-semibold text-lg text-gray-900 mb-2 hover:text-premium-badge transition-colors">
-                      {product.name}
-                    </h3>
+                    <div className="aspect-square bg-premium-hover overflow-hidden">
+                      {product.images && product.images[0] ? (
+                        <img
+                          src={product.images[0]}
+                          alt={product.name}
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-6xl">
+                          {product.category === 'limited' ? '✨' : '🍂'}
+                        </div>
+                      )}
+                    </div>
                   </Link>
-                  <p className="text-xl font-bold text-gray-900 mb-4">₹{product.price}</p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleBuyNow(product)}
-                      disabled={!product.inStock}
-                      className={`flex-1 py-2 rounded-lg font-medium transition-all ${
-                        product.inStock
-                          ? 'bg-gray-900 text-white hover:bg-gray-800'
-                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      }`}
-                    >
-                      Buy Now
-                    </button>
-                    <button
-                      onClick={() => removeFromWishlist(product._id)}
-                      className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
-                      title="Remove from wishlist"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
+                  <div className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-bold text-white ${
+                          product.category === 'limited' ? 'bg-yellow-500' : 'bg-green-500'
+                        }`}
+                      >
+                        {product.category === 'limited' ? 'LIMITED' : 'SEASONAL'}
+                      </span>
+                      {!product.inStock && (
+                        <span className="px-2 py-1 bg-red-500 text-white rounded-full text-xs font-bold">
+                          OUT OF STOCK
+                        </span>
+                      )}
+                    </div>
+                    <Link href={`/shop/${product.category}/${product.slug}`}>
+                      <h3 className="font-serif font-semibold text-lg text-gray-900 mb-2 hover:text-premium-badge transition-colors">
+                        {product.name}
+                      </h3>
+                    </Link>
+                    <p className="text-xl font-bold text-gray-900 mb-4">₹{product.price}</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleBuyNow(product)}
+                        disabled={!product.inStock}
+                        className={`flex-1 py-2 rounded-lg font-medium transition-all ${
+                          product.inStock
+                            ? 'bg-gray-900 text-white hover:bg-gray-800'
+                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        }`}
+                      >
+                        Buy Now
+                      </button>
+                      <button
+                        onClick={() => removeFromWishlist(product._id)}
+                        className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                        title="Remove from wishlist"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </main>

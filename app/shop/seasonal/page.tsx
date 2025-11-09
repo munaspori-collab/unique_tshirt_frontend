@@ -93,22 +93,24 @@ export default function SeasonalPage() {
               className="bg-premium-accent rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all group"
             >
                 {/* Product Image */}
-                <div className="aspect-square bg-premium-hover flex items-center justify-center relative overflow-hidden">
-                  {product.images && product.images[0] ? (
-                    <img
-                      src={product.images[0]}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
-                  ) : (
-                    <div className="text-8xl group-hover:scale-110 transition-transform duration-300">
-                      🍂
+                <Link href={product.slug ? `/product?slug=${encodeURIComponent(product.slug)}` : '#'} aria-disabled={!product.slug}>
+                  <div className="aspect-square bg-premium-hover flex items-center justify-center relative overflow-hidden cursor-pointer">
+                    {product.images && product.images[0] ? (
+                      <img
+                        src={product.images[0]}
+                        alt={product.name}
+                        className="w-full h-full object-cover bg-white transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="text-8xl group-hover:scale-110 transition-transform duration-300">
+                        🍂
+                      </div>
+                    )}
+                    <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                      SEASONAL
                     </div>
-                  )}
-                  <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
-                    SEASONAL
                   </div>
-                </div>
+                </Link>
 
               {/* Product Info */}
               <div className="p-6">

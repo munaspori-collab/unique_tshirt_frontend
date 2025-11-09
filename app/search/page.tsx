@@ -39,8 +39,11 @@ function SearchContent() {
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const response = await api.getProducts();
-      setProducts(response.data);
+      const [limited, seasonal] = await Promise.all([
+        api.getProducts('limited'),
+        api.getProducts('seasonal'),
+      ]);
+      setProducts([...(limited.data || []), ...(seasonal.data || [])]);
     } catch (error) {
       console.error('Failed to load products:', error);
     } finally {

@@ -106,7 +106,7 @@ export default function HeroSection() {
                   >
                     {images.map((src, i) => (
                       <div key={i} className="min-w-full h-full">
-                        <img src={src} alt="Product" className="w-full h-full object-cover select-none" />
+                        <img src={src} alt="Product" className="w-full h-full object-contain p-6 bg-white select-none" />
                       </div>
                     ))}
                   </motion.div>

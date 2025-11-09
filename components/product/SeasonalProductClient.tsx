@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Star, Heart, Share2, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, Star, Heart, Share2, ShoppingBag, X } from 'lucide-react';
 import { api, handleApiError } from '@/lib/api';
 import { openWhatsAppCheckout } from '@/lib/whatsapp';
 import { Size } from '@/types';
@@ -31,6 +31,7 @@ export default function SeasonalProductClient({ slug }: { slug: string }) {
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [selectedColor, setSelectedColor] = useState<string>('');
   const [selectedImage, setSelectedImage] = useState(0);
+  const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
 
   useEffect(() => {
     async function fetchProduct() {
@@ -51,12 +52,16 @@ export default function SeasonalProductClient({ slug }: { slug: string }) {
   const handleBuyNow = () => {
     if (!product) return;
 
+    const productUrl = typeof window !== 'undefined' && product.slug ? `${window.location.origin}/product?slug=${encodeURIComponent(product.slug)}` : undefined;
+    const imageUrl = product.images?.[selectedImage] || product.images?.[0];
     openWhatsAppCheckout({
       productName: product.name,
       productId: product._id,
       size: selectedSize as Size,
       color: selectedColor,
       price: product.price,
+      productUrl,
+      imageUrl,
     });
   };
 
@@ -100,13 +105,14 @@ export default function SeasonalProductClient({ slug }: { slug: string }) {
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="bg-premium-accent rounded-2xl overflow-hidden mb-4 aspect-square"
+              className="bg-premium-accent rounded-2xl overflow-hidden mb-4 aspect-square cursor-zoom-in"
+              onClick={() => setIsImagePreviewOpen(true)}
             >
               {product.images && product.images[selectedImage] ? (
                 <img
                   src={product.images[selectedImage]}
                   alt={product.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain p-4 bg-white"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-9xl">
@@ -241,6 +247,35 @@ export default function SeasonalProductClient({ slug }: { slug: string }) {
           </motion.div>
         </div>
       </div>
+
+      {/* Half-screen image preview */}
+      {isImagePreviewOpen && (
+        <div
+          className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setIsImagePreviewOpen(false)}
+        >
+          <div className="relative w-full max-w-4xl" onClick={(e) => e.stopPropagation()}>
+            <button
+              aria-label="Close image preview"
+              className="absolute -top-10 right-0 text-white"
+              onClick={() => setIsImagePreviewOpen(false)}
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <div className="h-[50vh] bg-white rounded-xl overflow-hidden">
+              {product?.images?.[selectedImage] ? (
+                <img
+                  src={product.images[selectedImage]}
+                  alt={product.name}
+                  className="w-full h-full object-contain"
+                />
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

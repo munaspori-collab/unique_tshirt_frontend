@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Star, Heart, Share2, ShoppingBag } from 'lucide-react';
-import { api, handleApiError } from '@/lib/api';
+import { api, handleApiError, API_BASE_URL } from '@/lib/api';
 import { openWhatsAppCheckout } from '@/lib/whatsapp';
 import { Size } from '@/types';
 
@@ -35,8 +35,23 @@ export default function ProductClient({ slug }: { slug: string }) {
   useEffect(() => {
     async function fetchProduct() {
       try {
+        if (!slug || slug === 'undefined' || slug === 'null') {
+          setError('Invalid product');
+          setProduct(null);
+          return;
+        }
         const response = await api.getProductFlexible(slug);
-        const p = response.data as Product | null;
+        let p = response.data as Product | null;
+        // Fallback: try direct endpoint by slug
+        if (!p) {
+          try {
+            const res = await fetch(`${API_BASE_URL}/api/products/${encodeURIComponent(slug)}`);
+            if (res.ok) {
+              const json = await res.json();
+              p = (json?.data || json?.product || (Array.isArray(json) ? json[0] : json)) ?? null;
+            }
+          } catch {}
+        }
         if (!p) {
           setProduct(null);
           setError('Product not found');

@@ -247,6 +247,8 @@ function SearchContent() {
                 ))}
               </div>
             )}
+          </>
+        )}
       </div>
     </main>
   );

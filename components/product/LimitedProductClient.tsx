@@ -66,8 +66,11 @@ export default function LimitedProductClient({ slug }: { slug: string }) {
         });
         if (!res.ok) return;
         const data = await res.json();
-        const list: any[] = data?.wishlist || data?.data || (Array.isArray(data) ? data : []);
-        const exists = list.some((it: any) => (it?._id || it?.id) === p._id);
+        const list: any[] = data?.wishlist || data?.items || data?.data || (Array.isArray(data) ? data : []);
+        const exists = list.some((it: any) => {
+          const pid = it?.product?._id || it?.productId || it?.product || it?._id || it?.id;
+          return pid && String(pid) === String(p._id);
+        });
         setIsWishlisted(!!exists);
       } catch {}
     }

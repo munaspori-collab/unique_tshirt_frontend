@@ -618,11 +618,21 @@ export default function AdminPage() {
                 })
                 .map((w) => (
                   <div key={w._id} className="flex items-center gap-3 p-3 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-200">
-                    <img
-                      src={w.product.images?.[0] || '/favicon.ico'}
-                      alt={w.product.name}
-                      className="w-14 h-14 object-cover rounded-lg border"
-                    />
+                    {(() => {
+                      const raw = (w.product.images && w.product.images[0]) || '';
+                      const src = raw
+                        ? (raw.startsWith('http') || raw.startsWith('data:')
+                            ? raw
+                            : `${API_BASE_URL}${raw.startsWith('/') ? '' : '/'}${raw}`)
+                        : '';
+                      return (
+                        <img
+                          src={src || '/favicon.ico'}
+                          alt={w.product.name}
+                          className="w-14 h-14 object-cover rounded-lg border"
+                        />
+                      );
+                    })()}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-900 truncate">{w.product.name}</p>
                       <p className="text-xs text-gray-600 truncate">{w.user.name}{w.user.email ? ` • ${w.user.email}` : ''}</p>

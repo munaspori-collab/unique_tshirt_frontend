@@ -6,6 +6,7 @@ import { ArrowLeft, Heart, ShoppingBag, Trash2, X } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { openWhatsAppCheckout, openWhatsAppBulkCheckout } from '@/lib/whatsapp';
 import { Size } from '@/types';
+import { API_BASE_URL } from '@/lib/api';
 
 interface Product {
   _id: string;
@@ -210,11 +211,18 @@ export default function WishlistPage() {
                   <div className="absolute top-3 left-3 z-10">
                     <input type="checkbox" checked={selected.has(product._id)} onChange={() => toggleSelected(product._id)} className="h-5 w-5" />
                   </div>
-                  <Link href={`/shop/${product.category}/${product.slug}`}>
-                    <div className="aspect-square bg-premium-hover overflow-hidden">
-                      {product.images && product.images[0] ? (
+                <Link href={`/product?slug=${encodeURIComponent(product.slug)}`}>
+                  <div className="aspect-square bg-premium-hover overflow-hidden">
+                    {(() => {
+                      const raw = (product.images && product.images[0]) || '';
+                      const src = raw
+                        ? (raw.startsWith('http') || raw.startsWith('data:')
+                            ? raw
+                            : `${API_BASE_URL}${raw.startsWith('/') ? '' : '/'}${raw}`)
+                        : '';
+                      return src ? (
                         <img
-                          src={product.images[0]}
+                          src={src}
                           alt={product.name}
                           className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                         />
@@ -222,9 +230,10 @@ export default function WishlistPage() {
                         <div className="w-full h-full flex items-center justify-center text-6xl">
                           {product.category === 'limited' ? '✨' : '🍂'}
                         </div>
-                      )}
-                    </div>
-                  </Link>
+                      );
+                    })()}
+                  </div>
+                </Link>
                   <div className="p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <span

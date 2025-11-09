@@ -39,7 +39,7 @@ export default function WishlistPage() {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/wishlist`, {
+      const response = await fetch(`${API_BASE_URL}/api/wishlist`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
         },
@@ -53,7 +53,7 @@ export default function WishlistPage() {
           const raw = typeof it === 'string' ? it : (it?.url || it?.src || '');
           if (!raw) return '';
           if (raw.startsWith('http') || raw.startsWith('data:')) return raw;
-          return `${process.env.NEXT_PUBLIC_API_URL}${raw.startsWith('/') ? '' : '/'}${raw}`;
+          return `${API_BASE_URL}${raw.startsWith('/') ? '' : '/'}${raw}`;
         }).filter(Boolean);
       };
 
@@ -102,7 +102,7 @@ export default function WishlistPage() {
 
   const removeFromWishlist = async (productId: string) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/wishlist/${productId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/wishlist/${productId}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('auth_token')}`,

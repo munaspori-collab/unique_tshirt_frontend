@@ -76,7 +76,7 @@ export default function AdminPage() {
   const loadProducts = async () => {
     try {
       setLoadingProducts(true);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`);
+      const response = await fetch(`${API_BASE_URL}/api/products`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch products');
@@ -88,11 +88,11 @@ export default function AdminPage() {
       // Handle different response formats
       let productsArray: Product[] = [];
       if (Array.isArray(data)) {
-        productsArray = data;
+        productsArray = data as Product[];
       } else if (data.products && Array.isArray(data.products)) {
-        productsArray = data.products;
+        productsArray = data.products as Product[];
       } else if (data.data && Array.isArray(data.data)) {
-        productsArray = data.data;
+        productsArray = data.data as Product[];
       }
       
       setProducts(productsArray);
@@ -116,6 +116,17 @@ export default function AdminPage() {
         `${API_BASE_URL}/api/admin/wishlist`,
         `${API_BASE_URL}/api/wishlist/all`,
       ];
+      // Helper to normalize various image payload shapes
+      const normalizeImages = (imgs: any): string[] => {
+        if (!imgs) return [];
+        const arr = Array.isArray(imgs) ? imgs : [imgs];
+        return arr.map((it: any) => {
+          const raw = typeof it === 'string' ? it : (it?.url || it?.src || '');
+          if (!raw) return '';
+          if (raw.startsWith('http') || raw.startsWith('data:')) return raw;
+          return `${API_BASE_URL}${raw.startsWith('/') ? '' : '/'}${raw}`;
+        }).filter(Boolean);
+      };
       for (const url of attempts) {
         try {
           const res = await fetch(url, { headers });
@@ -124,23 +135,26 @@ export default function AdminPage() {
           const list = Array.isArray(json)
             ? json
             : (json.wishlist || json.items || json.data || []);
-          const normalized: AdminWishlistItem[] = list.map((it: any) => ({
-            _id: String(it._id || it.id || `${(it.user && (it.user._id || it.user.id || it.user.email)) || 'u'}_${(it.product && (it.product._id || it.product.id || it.product.name)) || 'p'}`),
-            user: {
-              id: it.user?._id || it.user?.id,
-              name: it.user?.name || it.user?.fullName || it.user?.email?.split('@')[0] || 'User',
-              email: it.user?.email,
-              image: it.user?.image,
-            },
-            product: {
-              _id: it.product?._id || it.product?.id,
-              name: it.product?.name || 'Product',
-              images: it.product?.images || [],
-              slug: it.product?.slug,
-              category: it.product?.category,
-            },
-            createdAt: it.createdAt || it.addedAt || undefined,
-          }));
+          const normalized: AdminWishlistItem[] = list.map((it: any) => {
+            const p = it.product || it.productDetails || it.product_data || {};
+            return {
+              _id: String(it._id || it.id || `${(it.user && (it.user._id || it.user.id || it.user.email)) || 'u'}_${(p && (p._id || p.id || p.name)) || 'p'}`),
+              user: {
+                id: it.user?._id || it.user?.id,
+                name: it.user?.name || it.user?.fullName || it.user?.email?.split('@')[0] || 'User',
+                email: it.user?.email,
+                image: it.user?.image,
+              },
+              product: {
+                _id: p?._id || p?.id,
+                name: p?.name || p?.title || 'Product',
+                images: normalizeImages(p?.images ?? p?.image ?? p?.media ?? []),
+                slug: p?.slug,
+                category: p?.category,
+              },
+              createdAt: it.createdAt || it.addedAt || undefined,
+            } as AdminWishlistItem;
+          });
           setWishlistItems(normalized);
           break;
         } catch {}
@@ -671,11 +685,22 @@ export default function AdminPage() {
                   key={product._id}
                   className="flex items-center gap-4 p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-200 hover:shadow-md hover:scale-[1.01] transition-all group"
                 >
-                  <img
-                    src={product.images[0]}
-                    alt={product.name}
-                    className="w-24 h-24 object-cover rounded-lg border-2 border-gray-200 group-hover:border-purple-300 transition-colors"
-                  />
+                  {(() => {
+                    const raw = (product.images && (product.images as any)[0]) || '' as any;
+                    const s = typeof raw === 'string' ? raw : (raw?.url || raw?.src || '');
+                    const src = s
+                      ? (s.startsWith('http') || s.startsWith('data:')
+                          ? s
+                          : `${API_BASE_URL}${s.startsWith('/') ? '' : '/'}${s}`)
+                      : '';
+                    return (
+                      <img
+                        src={src || '/favicon.ico'}
+                        alt={product.name}
+                        className="w-24 h-24 object-cover rounded-lg border-2 border-gray-200 group-hover:border-purple-300 transition-colors"
+                      />
+                    );
+                  })()}
                   <div className="flex-1">
                     <h3 className="font-semibold text-lg text-gray-900 mb-1">{product.name}</h3>
                     <div className="flex items-center gap-4 text-sm">

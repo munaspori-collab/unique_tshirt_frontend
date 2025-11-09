@@ -1,4 +1,4 @@
-import ClientProductRedirect from '@/components/ClientProductRedirect';
+import ProductClient from '@/components/product/ProductClient';
 
 export const dynamicParams = false;
 
@@ -31,5 +31,5 @@ export async function generateStaticParams() {
 }
 
 export default function Page({ params }: { params: { slug: string } }) {
-  return <ClientProductRedirect slug={params.slug} />;
+  return <ProductClient slug={params.slug} />;
 }

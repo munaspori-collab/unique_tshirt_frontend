@@ -123,7 +123,7 @@ export default function SeasonalPage() {
                   </div>
                 </div>
                 <Link
-                  href={`/shop/seasonal/${product.slug}`}
+                  href={`/${product.slug}`}
                   className="block w-full py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 hover:shadow-lg transition-all text-center"
                 >
                   View Details

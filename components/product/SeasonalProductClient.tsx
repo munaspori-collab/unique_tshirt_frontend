@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Star, Heart, Share2, ShoppingBag, X } from 'lucide-react';
-import { api, handleApiError } from '@/lib/api';
+import { api, handleApiError, API_BASE_URL } from '@/lib/api';
 import { openWhatsAppCheckout } from '@/lib/whatsapp';
 import { Size } from '@/types';
 import { useAuth } from '@/lib/auth-context';
-import { API_BASE_URL } from '@/lib/api';
+import { getRatingSummary, getMyRating, setMyRating, UserRating } from '@/lib/ratings';
 
 interface Product {
   _id: string;
@@ -37,6 +37,9 @@ export default function SeasonalProductClient({ slug }: { slug: string }) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [ratingAvg, setRatingAvg] = useState(0);
+  const [ratingCount, setRatingCount] = useState(0);
+  const [myRating, setMyRatingState] = useState<UserRating | undefined>(undefined);
   const { token } = useAuth();
 
   useEffect(() => {
@@ -45,9 +48,18 @@ export default function SeasonalProductClient({ slug }: { slug: string }) {
         const response = await api.getProduct(slug);
         setProduct(response.data);
         const sizes = (response.data.sizes && response.data.sizes.length > 0) ? response.data.sizes : defaultSizes;
-        const colors = (response.data.colors && response.data.colors.length > 0) ? response.data.colors : defaultColors;
         setSelectedSize(sizes[0]);
-        setSelectedColor(colors[0]);
+        if (response.data.colors && response.data.colors.length > 0) {
+          setSelectedColor(response.data.colors[0]);
+        } else {
+          setSelectedColor('');
+        }
+        if (response.data?._id) {
+          const summary = getRatingSummary(response.data._id);
+          setRatingAvg(summary.average);
+          setRatingCount(summary.count);
+          setMyRatingState(getMyRating(response.data._id));
+        }
       } catch (err) {
         setError(handleApiError(err));
       } finally {
@@ -86,7 +98,7 @@ export default function SeasonalProductClient({ slug }: { slug: string }) {
       productName: product.name,
       productId: product._id,
       size: selectedSize as Size,
-      color: selectedColor,
+      color: selectedColor || 'Default',
       price: product.price,
       productUrl,
       imageUrl,
@@ -185,11 +197,17 @@ export default function SeasonalProductClient({ slug }: { slug: string }) {
               <h1 className="text-4xl font-serif font-bold text-gray-900 mb-4">{product.name}</h1>
               <div className="flex items-center gap-4 mb-4">
                 <span className="text-3xl font-bold text-gray-900">₹{product.price}</span>
-                <div className="flex items-center text-yellow-600">
-                  <Star className="w-5 h-5 fill-current" />
-                  <span className="ml-1 font-medium">4.8</span>
-                  <span className="ml-1 text-gray-600">(96 reviews)</span>
-                </div>
+              <div className="flex items-center text-yellow-600">
+                <Star className="w-5 h-5 fill-current" />
+                {ratingCount > 0 ? (
+                  <>
+                    <span className="ml-1 font-medium">{ratingAvg.toFixed(1)}</span>
+                    <span className="ml-1 text-gray-600">({ratingCount} rating{ratingCount>1?'s':''})</span>
+                  </>
+                ) : (
+                  <span className="ml-1 text-gray-600">No ratings yet</span>
+                )}
+              </div>
               </div>
             </div>
 
@@ -214,24 +232,26 @@ export default function SeasonalProductClient({ slug }: { slug: string }) {
                 </div>
               </div>
 
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Select Color</h3>
-                <div className="flex flex-wrap gap-2">
-                  {(product.colors?.length ? product.colors : defaultColors).map((color) => (
-                    <button
-                      key={color}
-                      onClick={() => setSelectedColor(color)}
-                      className={`px-6 py-3 rounded-lg font-medium transition-all ${
-                        selectedColor === color
-                          ? 'bg-gray-900 text-white'
-                          : 'bg-premium-accent text-gray-900 hover:bg-premium-badge'
-                      }`}
-                    >
-                      {color}
-                    </button>
-                  ))}
+              {product.colors?.length ? (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Select Color</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {product.colors.map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => setSelectedColor(color)}
+                        className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                          selectedColor === color
+                            ? 'bg-gray-900 text-white'
+                            : 'bg-premium-accent text-gray-900 hover:bg-premium-badge'
+                        }`}
+                      >
+                        {color}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ) : null}
 
             <div className="flex gap-4">
               <button
@@ -275,6 +295,43 @@ export default function SeasonalProductClient({ slug }: { slug: string }) {
             </div>
 
             <div className="border-t border-premium-accent pt-6 space-y-4">
+              {/* Ratings */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">Rate this product</h3>
+                <div className="flex items-center gap-1">
+                  {[1,2,3,4,5].map((n) => (
+                    <button
+                      key={n}
+                      aria-label={`Rate ${n} star${n>1?'s':''}`}
+                      onClick={async () => {
+                        if (!product?._id) return;
+                        setMyRating(product._id, n as UserRating);
+                        const summary = getRatingSummary(product._id);
+                        setRatingAvg(summary.average);
+                        setRatingCount(summary.count);
+                        setMyRatingState(n as UserRating);
+                        try {
+                          const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+                          if (token) headers.Authorization = `Bearer ${token}`;
+                          const payload = JSON.stringify({ productId: product._id, rating: n });
+                          const attempts = [
+                            `${API_BASE_URL}/api/ratings`,
+                            `${API_BASE_URL}/api/products/${product._id}/rating`,
+                            `${API_BASE_URL}/api/products/rate`,
+                          ];
+                          for (const url of attempts) {
+                            try { const res = await fetch(url, { method: 'POST', headers, body: payload }); if (res.ok) break; } catch {}
+                          }
+                        } catch {}
+                      }}
+                      className="p-1"
+                    >
+                      <Star className={`w-6 h-6 ${myRating && n <= myRating ? 'text-yellow-500 fill-yellow-500' : 'text-gray-400'}`} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {product.fabricDetails && (
                 <div>
                   <h3 className="text-sm font-semibold text-gray-900 mb-2">Care Details</h3>

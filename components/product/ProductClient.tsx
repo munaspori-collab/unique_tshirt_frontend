@@ -89,9 +89,12 @@ export default function ProductClient({ slug }: { slug?: string }) {
         }
         setProduct(p);
         const sizes = (p.sizes && p.sizes.length > 0) ? p.sizes : defaultSizes;
-        const colors = (p.colors && p.colors.length > 0) ? p.colors : defaultColors;
         setSelectedSize(sizes[0]);
-        setSelectedColor(colors[0]);
+        if (p.colors && p.colors.length > 0) {
+          setSelectedColor(p.colors[0]);
+        } else {
+          setSelectedColor('');
+        }
         if (p?._id) {
           const summary = getRatingSummary(p._id);
           setRatingAvg(summary.average);
@@ -135,7 +138,7 @@ export default function ProductClient({ slug }: { slug?: string }) {
       productName: product.name,
       productId: product._id,
       size: selectedSize as Size,
-      color: selectedColor,
+      color: selectedColor || 'Default',
       price: product.price,
       productUrl,
       imageUrl,
@@ -337,24 +340,26 @@ export default function ProductClient({ slug }: { slug?: string }) {
                 </div>
               </div>
 
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Select Color</h3>
-                <div className="flex flex-wrap gap-2">
-                  {(product.colors?.length ? product.colors : defaultColors).map((color) => (
-                    <button
-                      key={color}
-                      onClick={() => setSelectedColor(color)}
-                      className={`px-6 py-3 rounded-lg font-medium transition-all ${
-                        selectedColor === color
-                          ? 'bg-gray-900 text-white'
-                          : 'bg-premium-accent text-gray-900 hover:bg-premium-badge'
-                      }`}
-                    >
-                      {color}
-                    </button>
-                  ))}
+              {product.colors?.length ? (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Select Color</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {product.colors.map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => setSelectedColor(color)}
+                        className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                          selectedColor === color
+                            ? 'bg-gray-900 text-white'
+                            : 'bg-premium-accent text-gray-900 hover:bg-premium-badge'
+                        }`}
+                      >
+                        {color}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ) : null}
 
             <div className="flex gap-4">
               <button

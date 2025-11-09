@@ -75,10 +75,14 @@ export default function HeroSection() {
     <section className="relative bg-gradient-to-br from-premium-hover via-premium-base to-premium-accent overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
         <div className="text-center mb-8 sm:mb-10">
-          <div className="inline-flex items-center gap-3 px-4 py-2 bg-premium-badge/30 rounded-full">
-            <span className="text-2xl">👕</span>
-            <h2 className="text-xl sm:text-2xl font-serif font-bold text-gray-900">Premium Collection</h2>
-          </div>
+          <h1 className="text-4xl sm:text-6xl md:text-7xl font-serif font-bold tracking-tight text-gray-900">
+            <span className="bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900 bg-clip-text text-transparent">
+              Unique T-shirts
+            </span>
+          </h1>
+          <p className="mt-4 text-base sm:text-lg text-gray-700 max-w-2xl mx-auto">
+            Premium fashion for everyone. Stylish, comfortable, and truly unique.
+          </p>
         </div>
 
         <div
@@ -148,9 +152,9 @@ export default function HeroSection() {
         <div className="mt-8 flex justify-center">
           <Link
             href="/shop/limited"
-            className="inline-flex items-center justify-center px-6 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-all hover:shadow-lg"
+            className="inline-flex items-center justify-center px-8 py-4 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-all hover:shadow-lg"
           >
-            Explore Limited Collection
+            Shop Now
           </Link>
         </div>
       </div>

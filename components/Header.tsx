@@ -86,6 +86,23 @@ export default function Header() {
             </Link>
           </nav>
 
+          {/* Inline Mobile Search (visible on small screens, before hamburger) */}
+          {!isSearchPage && (
+            <form onSubmit={handleSearch} className="flex md:hidden items-center flex-1 mx-2 min-w-0">
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full h-9 px-3 py-2 pl-8 bg-premium-hover rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-premium-badge transition-all"
+                  aria-label="Search products"
+                />
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+              </div>
+            </form>
+          )}
+
           {/* Search Bar (Desktop) */}
           {!isSearchPage && (
             <form onSubmit={handleSearch} className="hidden md:flex items-center flex-1 max-w-md mx-8">

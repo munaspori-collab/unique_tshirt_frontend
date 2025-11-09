@@ -43,6 +43,35 @@ export const api = {
     return { data: normalizeProduct(json) };
   },
 
+  // Try multiple slug endpoints and fall back to searching lists
+  async getProductFlexible(slug: string) {
+    const attempts = [
+      `${API_BASE_URL}/api/products/${encodeURIComponent(slug)}`,
+      `${API_BASE_URL}/api/products/slug/${encodeURIComponent(slug)}`,
+      `${API_BASE_URL}/api/products?slug=${encodeURIComponent(slug)}`,
+    ];
+    for (const url of attempts) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) continue;
+        const json = await res.json();
+        const prod = normalizeProduct(json);
+        if (prod && prod.slug) return { data: prod };
+      } catch {}
+    }
+    try {
+      const [limited, seasonal] = await Promise.all([
+        api.getProducts('limited'),
+        api.getProducts('seasonal'),
+      ]);
+      const all = [...limited.data, ...seasonal.data];
+      const found = all.find((p: any) => p?.slug === slug) ?? null;
+      return { data: found };
+    } catch {
+      return { data: null };
+    }
+  },
+
   // Health check
   async healthCheck() {
     const response = await fetch(`${API_BASE_URL}/health`);

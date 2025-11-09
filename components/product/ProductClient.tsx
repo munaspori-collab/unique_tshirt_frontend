@@ -35,7 +35,7 @@ export default function ProductClient({ slug }: { slug: string }) {
   useEffect(() => {
     async function fetchProduct() {
       try {
-        const response = await api.getProduct(slug);
+        const response = await api.getProductFlexible(slug);
         setProduct(response.data);
         if (response.data.sizes?.length > 0) setSelectedSize(response.data.sizes[0]);
         if (response.data.colors?.length > 0) setSelectedColor(response.data.colors[0]);

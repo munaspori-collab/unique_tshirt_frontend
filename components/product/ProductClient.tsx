@@ -68,10 +68,13 @@ export default function ProductClient({ slug }: { slug?: string }) {
                 const arr = Array.isArray(imgs) ? imgs : [imgs];
                 const normalizedImages = arr
                   .map((it: any) => {
-                    const v = typeof it === 'string' ? it : (it?.url || it?.src || '');
-                    if (!v) return '';
+                    const v0 = typeof it === 'string' ? it : (it?.url || it?.src || '');
+                    if (!v0) return '';
+                    const v = String(v0).trim();
                     if (v.startsWith('http') || v.startsWith('data:')) return v;
-                    return `${API_BASE_URL}${v.startsWith('/') ? '' : '/'}${v}`;
+                    const cleaned = v.replace(/\\/g, '/');
+                    const withSlash = cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
+                    return `${API_BASE_URL}${withSlash}`;
                   })
                   .filter(Boolean);
                 p = { ...raw, images: normalizedImages } as any;

@@ -121,10 +121,13 @@ export default function AdminPage() {
         if (!imgs) return [];
         const arr = Array.isArray(imgs) ? imgs : [imgs];
         return arr.map((it: any) => {
-          const raw = typeof it === 'string' ? it : (it?.url || it?.src || '');
-          if (!raw) return '';
+          const raw0 = typeof it === 'string' ? it : (it?.url || it?.src || '');
+          if (!raw0) return '';
+          const raw = String(raw0).trim();
           if (raw.startsWith('http') || raw.startsWith('data:')) return raw;
-          return `${API_BASE_URL}${raw.startsWith('/') ? '' : '/'}${raw}`;
+          const cleaned = raw.replace(/\\/g, '/');
+          const withSlash = cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
+          return `${API_BASE_URL}${withSlash}`;
         }).filter(Boolean);
       };
       for (const url of attempts) {
@@ -687,11 +690,16 @@ export default function AdminPage() {
                 >
                   {(() => {
                     const raw = (product.images && (product.images as any)[0]) || '' as any;
-                    const s = typeof raw === 'string' ? raw : (raw?.url || raw?.src || '');
+                    const s0 = typeof raw === 'string' ? raw : (raw?.url || raw?.src || '');
+                    const s = (s0 || '').trim();
                     const src = s
                       ? (s.startsWith('http') || s.startsWith('data:')
                           ? s
-                          : `${API_BASE_URL}${s.startsWith('/') ? '' : '/'}${s}`)
+                          : (() => {
+                              const cleaned = s.replace(/\\/g, '/');
+                              const withSlash = cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
+                              return `${API_BASE_URL}${withSlash}`;
+                            })())
                       : '';
                     return (
                       <img

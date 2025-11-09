@@ -6,10 +6,14 @@ function normalizeImages(imgs: any): string[] {
   const arr = Array.isArray(imgs) ? imgs : [imgs];
   return arr
     .map((it: any) => {
-      const raw = typeof it === 'string' ? it : (it?.url || it?.src || '');
-      if (!raw) return '';
+      const raw0 = typeof it === 'string' ? it : (it?.url || it?.src || '');
+      if (!raw0) return '';
+      const raw = String(raw0).trim();
       if (raw.startsWith('http') || raw.startsWith('data:')) return raw;
-      return `${API_BASE_URL}${raw.startsWith('/') ? '' : '/'}${raw}`;
+      // Fix Windows-style backslashes and ensure leading slash
+      const cleaned = raw.replace(/\\/g, '/');
+      const withSlash = cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
+      return `${API_BASE_URL}${withSlash}`;
     })
     .filter(Boolean);
 }

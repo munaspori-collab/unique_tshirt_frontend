@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Edit, Trash2, X, Image as ImageIcon, Package, DollarSign, Tag, Heart, Search as SearchIcon } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, X, Image as ImageIcon, Package, DollarSign, Tag } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
 import { API_BASE_URL } from '@/lib/api';
@@ -23,12 +23,6 @@ interface Product {
   inStock: boolean;
 }
 
-interface AdminWishlistItem {
-  _id: string;
-  user: { id?: string; _id?: string; name?: string; email?: string; image?: string };
-  product: { _id: string; name: string; images?: string[]; slug?: string; category?: string };
-  createdAt?: string;
-}
 
 export default function AdminPage() {
   const { user, isAdmin, loading } = useAuth();
@@ -39,10 +33,6 @@ export default function AdminPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  // Wishlist Insights
-  const [wishlistItems, setWishlistItems] = useState<AdminWishlistItem[]>([]);
-  const [loadingWishlist, setLoadingWishlist] = useState(true);
-  const [wishlistQuery, setWishlistQuery] = useState('');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -69,7 +59,6 @@ export default function AdminPage() {
   useEffect(() => {
     if (isAdmin) {
       loadProducts();
-      loadWishlistInsights();
     }
   }, [isAdmin]);
 
@@ -105,70 +94,6 @@ export default function AdminPage() {
     }
   };
 
-  const loadWishlistInsights = async () => {
-    try {
-      setLoadingWishlist(true);
-      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-      const headers: Record<string,string> = token ? { Authorization: `Bearer ${token}` } : {};
-      // Prefer the only confirmed-working endpoint first to avoid 404 noise in logs
-      const attempts = [
-        `${API_BASE_URL}/api/wishlist?all=true`,
-        `${API_BASE_URL}/api/admin/wishlist`,
-        `${API_BASE_URL}/api/wishlist/all`,
-      ];
-      // Helper to normalize various image payload shapes
-      const normalizeImages = (imgs: any): string[] => {
-        if (!imgs) return [];
-        const arr = Array.isArray(imgs) ? imgs : [imgs];
-        return arr.map((it: any) => {
-          const raw0 = typeof it === 'string' ? it : (it?.url || it?.src || '');
-          if (!raw0) return '';
-          const raw = String(raw0).trim();
-          if (raw.startsWith('http') || raw.startsWith('data:')) return raw;
-          const cleaned = raw.replace(/\\/g, '/');
-          const withSlash = cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
-          return `${API_BASE_URL}${withSlash}`;
-        }).filter(Boolean);
-      };
-      for (const url of attempts) {
-        try {
-          const res = await fetch(url, { headers });
-          if (!res.ok) continue;
-          const json = await res.json();
-          const list = Array.isArray(json)
-            ? json
-            : (json.wishlist || json.items || json.data || []);
-          const normalized: AdminWishlistItem[] = list.map((it: any) => {
-            const p = it.product || it.productDetails || it.product_data || {};
-            return {
-              _id: String(it._id || it.id || `${(it.user && (it.user._id || it.user.id || it.user.email)) || 'u'}_${(p && (p._id || p.id || p.name)) || 'p'}`),
-              user: {
-                id: it.user?._id || it.user?.id,
-                name: it.user?.name || it.user?.fullName || it.user?.email?.split('@')[0] || 'User',
-                email: it.user?.email,
-                image: it.user?.image,
-              },
-              product: {
-                _id: p?._id || p?.id,
-                name: p?.name || p?.title || 'Product',
-                images: normalizeImages(p?.images ?? p?.image ?? p?.media ?? []),
-                slug: p?.slug,
-                category: p?.category,
-              },
-              createdAt: it.createdAt || it.addedAt || undefined,
-            } as AdminWishlistItem;
-          });
-          setWishlistItems(normalized);
-          break;
-        } catch {}
-      }
-    } catch (e) {
-      console.error('Failed to load wishlist insights', e);
-      setWishlistItems([]);
-    } finally {
-      setLoadingWishlist(false);
-    }
-  };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -594,78 +519,6 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Wishlist Insights */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-serif font-bold text-gray-900 flex items-center gap-2">
-              <Heart className="w-6 h-6 text-red-500" /> Wishlist Insights
-            </h2>
-            <div className="relative max-w-xs w-full">
-              <input
-                type="text"
-                value={wishlistQuery}
-                onChange={(e) => setWishlistQuery(e.target.value)}
-                placeholder="Filter by user or product..."
-                className="w-full pl-10 pr-4 py-2 bg-premium-hover rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-            </div>
-          </div>
-
-          {loadingWishlist ? (
-            <div className="text-center py-10">
-              <div className="h-10 w-10 border-4 border-purple-300 border-t-purple-600 rounded-full animate-spin mx-auto" />
-              <p className="text-gray-600 mt-3">Loading wishlist...</p>
-            </div>
-          ) : wishlistItems.length === 0 ? (
-            <div className="text-center py-10">
-              <Heart className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-600">No wishlist items yet</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {wishlistItems
-                .filter((w) => {
-                  const q = wishlistQuery.toLowerCase();
-                  if (!q) return true;
-                  return (
-                    (w.user?.name || '').toLowerCase().includes(q) ||
-                    (w.user?.email || '').toLowerCase().includes(q) ||
-                    (w.product?.name || '').toLowerCase().includes(q)
-                  );
-                })
-                .map((w) => (
-                  <div key={w._id} className="flex items-center gap-3 p-3 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-200">
-                    {(() => {
-                      const raw = (w.product.images && w.product.images[0]) || '';
-                      const src = raw
-                        ? (raw.startsWith('http') || raw.startsWith('data:')
-                            ? raw
-                            : `${API_BASE_URL}${raw.startsWith('/') ? '' : '/'}${raw}`)
-                        : '';
-                      return (
-                        <img
-                          src={src || '/favicon.ico'}
-                          alt={w.product.name}
-                          className="w-14 h-14 object-cover rounded-lg border"
-                        />
-                      );
-                    })()}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{w.product.name}</p>
-                      <p className="text-xs text-gray-600 truncate">{w.user.name}{w.user.email ? ` • ${w.user.email}` : ''}</p>
-                      {w.createdAt && (
-                        <p className="text-[11px] text-gray-500">{new Date(w.createdAt).toLocaleString()}</p>
-                      )}
-                    </div>
-                    {w.product.slug && (
-                      <Link href={`/product?slug=${encodeURIComponent(w.product.slug)}`} className="px-3 py-1 text-xs bg-gray-900 text-white rounded-lg hover:bg-gray-800">View</Link>
-                    )}
-                  </div>
-                ))}
-            </div>
-          )}
-        </div>
 
         {/* Products List */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
